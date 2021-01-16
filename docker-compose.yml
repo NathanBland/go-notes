@@ -1,0 +1,19 @@
+
+version: '3.3'
+
+services:
+  go-api:
+    build: ./server
+    working_dir: '/go/src/github.com/NathanBland/go-vite-docker-starter'
+    command: 'air'
+    volumes:
+      - ./server:/go/src/github.com/NathanBland/go-vite-docker-starter
+    depends_on:
+      - mongo-db
+    environment:
+      HOST: 0.0.0.0
+      ENV: development
+    ports:
+      - 3000:3000
+  mongo-db:
+    image: 'mongo:4'
