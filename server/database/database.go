@@ -1,10 +1,15 @@
 package database
 
 import (
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
+type MongoInstance struct {
+	Client *mongo.Client
+	Db     *mongo.Database
+}
+
 var (
-	DBConn *gorm.DB
+	MG *MongoInstance
 )
+

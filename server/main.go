@@ -3,14 +3,12 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
+	"time"
 
 	"github.com/NathanBland/go-vite-docker-starter/book"
 	"github.com/NathanBland/go-vite-docker-starter/database"
-	"github.com/gofiber/fiber"
-    "github.com/jinzhu/gorm"
-    // _ "github.com/jinzhu/gorm/dialects/sqlite"
+	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -18,24 +16,20 @@ import (
 var collection *mongo.Collection
 var ctx = context.TODO()
 
-func init() {
-	clientOptions := options.Client().ApplyURI("mongodb://mongo-db:27017/")
-	client, err := mongo.Connect(ctx, clientOptions)
-	if err != nil {
-		log.Fatal(err)
-	}
+// func init() {
+// 	clientOptions := options.Client().ApplyURI("mongodb://mongo-db:27017/")
+// 	client, err := mongo.Connect(ctx, clientOptions)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
 
-	err = client.Ping(ctx, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
+// 	err = client.Ping(ctx, nil)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
 
-	collection = client.Database("noted").Collection("notes")
-}
-
-func helloWorld(c *fiber.Ctx) {
-	c.Send("hello world")
-}
+// 	collection = client.Database("noted").Collection("notes")
+// }
 
 func setupRoutes(app *fiber.App) {
 	app.Get("/api/v1/book", book.GetBooks)
@@ -44,23 +38,44 @@ func setupRoutes(app *fiber.App) {
 	app.Delete("/api/v1/book/:id", book.DeleteBook)
 }
 
-func initDatabase() {
-	var err error
-	database.DBConn, err = gorm.Open("sqlite3", "books.db")
-	if err != nil {
-		log.Fatal("Failed to connect to database")
+func initDatabase() error {
+	
+	type MongoInstance struct {
+		Client *mongo.Client
+		Db     *mongo.Database
 	}
-	fmt.Println("Database connection successfully established")
+	
+	
+	// Database settings (insert your own database name and connection URI)
+	const dbName = "fiber_test"
+	const mongoURI = "mongodb://mongo-db:27017/" + dbName
 
-	database.DBConn.AutoMigrate(&book.Book{})
-	fmt.Println("Database Migrated")
+	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	err = client.Connect(ctx)
+	db := client.Database(dbName)
+
+	if err != nil {
+		return err
+	}
+
+	database.MG = &MongoInstance{
+		Client: client,
+		Db:     db,
+	}
+
+	return nil
 }
 
 func main() {
 	app := fiber.New()
-
-	initDatabase()
-	defer database.DBConn.Close()
+	// Connect to the database
+	if err := initDatabase(); err != nil {
+		log.Fatal(err)
+	}
 
 	setupRoutes(app)
 
