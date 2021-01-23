@@ -2,6 +2,16 @@
 version: '3.3'
 
 services:
+  vite-ui:
+    build: ./client
+    working_dir: '/client'
+    command: 'npm run dev'
+    volumes: 
+      - ./client:/client
+    depends_on: 
+      - go-api
+    ports:
+      - 3000:3000
   go-api:
     build: ./server
     working_dir: '/go/src/github.com/NathanBland/go-vite-docker-starter'
@@ -14,6 +24,6 @@ services:
       HOST: 0.0.0.0
       ENV: development
     ports:
-      - 3000:3000
+      - 3001:3001
   mongo-db:
     image: 'mongo:4'
