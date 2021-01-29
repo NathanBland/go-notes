@@ -4,20 +4,20 @@ version: '3.3'
 services:
   vite-ui:
     build: ./client
-    working_dir: '/client'
+    working_dir: '/go-notes-client'
     command: "sh -c 'npm i && npm run dev'"
     volumes: 
-      - ./client:/client
+      - ./client:/go-notes-client
     depends_on: 
       - go-api
     ports:
       - 3000:3000
   go-api:
     build: ./server
-    working_dir: '/go/src/github.com/NathanBland/go-vite-docker-starter'
+    working_dir: '/go/src/github.com/NathanBland/go-notes'
     command: 'air'
     volumes:
-      - ./server:/go/src/github.com/NathanBland/go-vite-docker-starter
+      - ./server:/go/src/github.com/NathanBland/go-notes
     depends_on:
       - mongosetup
     environment:
@@ -26,9 +26,9 @@ services:
     ports:
       - 3001:3001
   # mongo cluster
-  mongo1:
+  notes-mongo1:
     hostname: mongo1
-    container_name: mongo1
+    container_name: notes-mongo1
     image: mongo:4.4-bionic
     expose:
       - 27017
@@ -37,9 +37,9 @@ services:
       - mongo1:/data/db
     entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0" ]
 
-  mongo2:
+  notes-mongo2:
     hostname: mongo2
-    container_name: mongo2
+    container_name: notes-mongo2
     image: mongo:4.4-bionic
     expose:
       - 27017
@@ -48,9 +48,9 @@ services:
       - mongo2:/data/db
     entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0" ]
 
-  mongo3:
+  notes-mongo3:
     hostname: mongo3
-    container_name: mongo3
+    container_name: notes-mongo3
     image: mongo:4.4-bionic
     expose:
       - 27017
@@ -62,13 +62,13 @@ services:
   mongosetup:
     image: mongo:4.4-bionic
     links:
-      - mongo1:mongo1
-      - mongo2:mongo2
-      - mongo3:mongo3
+      - notes-mongo1:notes-mongo1
+      - notes-mongo2:notes-mongo2
+      - notes-mongo3:notes-mongo3
     depends_on:
-      - mongo1
-      - mongo2
-      - mongo3
+      - notes-mongo1
+      - notes-mongo2
+      - notes-mongo3
     volumes:
       - ./scripts:/scripts
     restart: "no"

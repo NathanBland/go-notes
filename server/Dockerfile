@@ -1,6 +1,6 @@
 FROM golang:alpine 
 
-WORKDIR /go/src/github.com/NathanBland/go-vite-docker-starter
+WORKDIR /go/src/github.com/NathanBland/go-notes
 ADD ./go.mod ./go.mod
 ADD ./go.sum ./go.sum
 

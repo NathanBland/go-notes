@@ -18,8 +18,8 @@ var MG MongoInstance
 func Dbconn() error {
 
 	// Database settings (insert your own database name and connection URI)
-	const dbName = "book_worm"
-	const mongoURI = "mongodb://mongo1:27017/" + dbName
+	const dbName = "go-notes"
+	const mongoURI = "mongodb://notes-mongo1:27017/" + dbName
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
 
