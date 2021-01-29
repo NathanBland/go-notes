@@ -13,13 +13,13 @@ type MongoInstance struct {
 	Db     *mongo.Database
 }
 
-var MG *MongoInstance
+var MG MongoInstance
 
 func Dbconn() error {
 
 	// Database settings (insert your own database name and connection URI)
 	const dbName = "book_worm"
-	const mongoURI = "mongodb://mongo-db:27017/" + dbName
+	const mongoURI = "mongodb://mongo1:27017/" + dbName
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
 
@@ -33,7 +33,7 @@ func Dbconn() error {
 		return err
 	}
 
-	MG = &MongoInstance{
+	MG = MongoInstance{
 		Client: client,
 		Db:     db}
 

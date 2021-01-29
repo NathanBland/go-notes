@@ -5,7 +5,7 @@ services:
   vite-ui:
     build: ./client
     working_dir: '/client'
-    command: 'npm run dev'
+    command: "sh -c 'npm i && npm run dev'"
     volumes: 
       - ./client:/client
     depends_on: 
@@ -19,11 +19,62 @@ services:
     volumes:
       - ./server:/go/src/github.com/NathanBland/go-vite-docker-starter
     depends_on:
-      - mongo-db
+      - mongosetup
     environment:
       HOST: 0.0.0.0
       ENV: development
     ports:
       - 3001:3001
-  mongo-db:
-    image: 'mongo:4'
+  # mongo cluster
+  mongo1:
+    hostname: mongo1
+    container_name: mongo1
+    image: mongo:4.4-bionic
+    expose:
+      - 27017
+    restart: always
+    volumes:
+      - mongo1:/data/db
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0" ]
+
+  mongo2:
+    hostname: mongo2
+    container_name: mongo2
+    image: mongo:4.4-bionic
+    expose:
+      - 27017
+    restart: always
+    volumes:
+      - mongo2:/data/db
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0" ]
+
+  mongo3:
+    hostname: mongo3
+    container_name: mongo3
+    image: mongo:4.4-bionic
+    expose:
+      - 27017
+    restart: always
+    volumes:
+      - mongo3:/data/db
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0" ]
+
+  mongosetup:
+    image: mongo:4.4-bionic
+    links:
+      - mongo1:mongo1
+      - mongo2:mongo2
+      - mongo3:mongo3
+    depends_on:
+      - mongo1
+      - mongo2
+      - mongo3
+    volumes:
+      - ./scripts:/scripts
+    restart: "no"
+    entrypoint: [ "bash", "/scripts/mongo_setup.sh" ]
+
+volumes:
+  mongo1:
+  mongo2:
+  mongo3:
