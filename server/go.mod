@@ -1,4 +1,4 @@
-module github.com/NathanBland/go-vite-docker-starter
+module github.com/NathanBland/go-notes
 
 go 1.15
 

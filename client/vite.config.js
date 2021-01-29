@@ -1,8 +1,10 @@
 import vue from '@vitejs/plugin-vue'
+import Pages from 'vite-plugin-pages';
 
-/**
- * @type {import('vite').UserConfig}
- */
 export default {
-  plugins: [vue()]
+  plugins: [vue({
+    include: [/\.vue$/],
+  }), Pages({
+    extensions: ['vue']
+  })]
 }

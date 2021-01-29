@@ -1,6 +1,6 @@
 FROM node:lts-alpine 
 
-WORKDIR /client
+WORKDIR /go-notes-client
 ADD ./package.json ./package.json
 ADD ./package-lock.json ./package-lock.json
 

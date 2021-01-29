@@ -1,48 +1,48 @@
-package book
+package note
 
 import (
-	"github.com/NathanBland/go-vite-docker-starter/database"
+	"github.com/NathanBland/go-notes/database"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type Book struct {
+type note struct {
 	ID     string `json:"id,omitempty" bson:"_id,omitempty"`
 	Title  string `json:"title"`
 	Author string `json:"author"`
 	Rating int    `json:"rating"`
 }
 
-func GetBooks(c *fiber.Ctx) error {
+func Getnotes(c *fiber.Ctx) error {
 	// get all records as a cursor
 	query := bson.D{{}}
-	cursor, err := database.MG.Db.Collection("books").Find(c.Context(), query)
+	cursor, err := database.MG.Db.Collection("notes").Find(c.Context(), query)
 	if err != nil {
 		return c.Status(500).SendString(err.Error())
 	}
 
-	var books []Book = make([]Book, 0)
+	var notes []note = make([]note, 0)
 
-	if err := cursor.All(c.Context(), &books); err != nil {
+	if err := cursor.All(c.Context(), &notes); err != nil {
 		return c.Status(500).SendString(err.Error())
 	}
 
-	return c.JSON(books)
+	return c.JSON(notes)
 }
 
-func GetBook(c *fiber.Ctx) error {
+func Getnote(c *fiber.Ctx) error {
 	id := c.Params("id")
-	bookID, err := primitive.ObjectIDFromHex(id)
-	collection := database.MG.Db.Collection("books")
+	noteID, err := primitive.ObjectIDFromHex(id)
+	collection := database.MG.Db.Collection("notes")
 
 	if err != nil {
 		return c.SendStatus(400)
 	}
 
-	query := bson.D{{Key: "_id", Value: bookID}}
-	bookRecord := collection.FindOne(c.Context(), query)
+	query := bson.D{{Key: "_id", Value: noteID}}
+	noteRecord := collection.FindOne(c.Context(), query)
 	if err != nil {
 		// ErrNoDocuments means that the filter did not match any documents in the collection
 		if err == mongo.ErrNoDocuments {
@@ -50,26 +50,26 @@ func GetBook(c *fiber.Ctx) error {
 		}
 		return c.SendStatus(500)
 	}
-	book := &Book{}
-	bookRecord.Decode(book)
+	note := &note{}
+	noteRecord.Decode(note)
 
-	return c.Status(200).JSON(book)
+	return c.Status(200).JSON(note)
 }
-func NewBook(c *fiber.Ctx) error {
-	collection := database.MG.Db.Collection("books")
+func Newnote(c *fiber.Ctx) error {
+	collection := database.MG.Db.Collection("notes")
 
-	// New Book struct
-	book := new(Book)
+	// New note struct
+	note := new(note)
 	// Parse body into struct
-	if err := c.BodyParser(book); err != nil {
+	if err := c.BodyParser(note); err != nil {
 		return c.Status(400).SendString(err.Error())
 	}
 
 	// force MongoDB to always set its own generated ObjectIDs
-	book.ID = ""
+	note.ID = ""
 
 	// insert the record
-	insertionResult, err := collection.InsertOne(c.Context(), book)
+	insertionResult, err := collection.InsertOne(c.Context(), note)
 	if err != nil {
 		return c.Status(500).SendString(err.Error())
 	}
@@ -79,14 +79,14 @@ func NewBook(c *fiber.Ctx) error {
 	createdRecord := collection.FindOne(c.Context(), filter)
 
 	// decode the Mongo record into Employee
-	createdBook := &Book{}
-	createdRecord.Decode(createdBook)
+	creatednote := &note{}
+	createdRecord.Decode(creatednote)
 
 	// return the created Employee in JSON format
-	return c.Status(201).JSON(createdBook)
+	return c.Status(201).JSON(creatednote)
 }
-func DeleteBook(c *fiber.Ctx) error {
-	bookID, err := primitive.ObjectIDFromHex(
+func Deletenote(c *fiber.Ctx) error {
+	noteID, err := primitive.ObjectIDFromHex(
 		c.Params("id"),
 	)
 
@@ -95,15 +95,15 @@ func DeleteBook(c *fiber.Ctx) error {
 		return c.SendStatus(400)
 	}
 
-	// find and delete the book with the given ID
-	query := bson.D{{Key: "_id", Value: bookID}}
-	result, err := database.MG.Db.Collection("books").DeleteOne(c.Context(), &query)
+	// find and delete the note with the given ID
+	query := bson.D{{Key: "_id", Value: noteID}}
+	result, err := database.MG.Db.Collection("notes").DeleteOne(c.Context(), &query)
 
 	if err != nil {
 		return c.SendStatus(500)
 	}
 
-	// the book might not exist
+	// the note might not exist
 	if result.DeletedCount < 1 {
 		return c.SendStatus(404)
 	}

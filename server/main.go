@@ -3,16 +3,16 @@ package main
 
 import (
 	"log"
-	"github.com/NathanBland/go-vite-docker-starter/book"
-	"github.com/NathanBland/go-vite-docker-starter/database"
+	"github.com/NathanBland/go-notes/note"
+	"github.com/NathanBland/go-notes/database"
 	"github.com/gofiber/fiber/v2"
 )
 
 func setupRoutes(app *fiber.App) {
-	app.Get("/api/v1/book", book.GetBooks)
-	app.Get("/api/v1/book/:id", book.GetBook)
-	app.Post("/api/v1/book", book.NewBook)
-	app.Delete("/api/v1/book/:id", book.DeleteBook)
+	app.Get("/api/v1/note", note.Getnotes)
+	app.Get("/api/v1/note/:id", note.Getnote)
+	app.Post("/api/v1/note", note.Newnote)
+	app.Delete("/api/v1/note/:id", note.Deletenote)
 }
 
 func main() {
