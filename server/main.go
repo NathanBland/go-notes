@@ -3,7 +3,6 @@ package main
 
 import (
 	"log"
-
 	"github.com/NathanBland/go-vite-docker-starter/book"
 	"github.com/NathanBland/go-vite-docker-starter/database"
 	"github.com/gofiber/fiber/v2"
