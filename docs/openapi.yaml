@@ -1,0 +1,212 @@
+openapi: 3.1.0
+info:
+  title: go-notes API
+  version: 0.1.0
+servers:
+  - url: http://localhost:8080/api/v1
+paths:
+  /healthz:
+    get:
+      responses:
+        '200':
+          description: Healthy response
+  /auth/login:
+    get:
+      responses:
+        '302':
+          description: Redirect to OIDC provider
+  /auth/callback:
+    get:
+      responses:
+        '200':
+          description: Authenticated user and session cookie set
+  /auth/me:
+    get:
+      responses:
+        '200':
+          description: Current authenticated user
+        '401':
+          description: Authentication required
+  /auth/logout:
+    post:
+      responses:
+        '200':
+          description: Session cleared
+  /notes:
+    get:
+      parameters:
+        - name: saved_query_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1 }
+        - name: page_size
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100 }
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: search_mode
+          in: query
+          schema: { type: string, enum: [plain, fts] }
+        - name: status
+          in: query
+          schema: { type: string, enum: [active, archived, all] }
+        - name: shared
+          in: query
+          schema: { type: boolean }
+        - name: has_title
+          in: query
+          schema: { type: boolean }
+        - name: tag
+          in: query
+          schema: { type: string }
+        - name: tags
+          in: query
+          schema: { type: string, description: "Comma-separated tag list" }
+        - name: tag_count_min
+          in: query
+          schema: { type: integer, minimum: 0 }
+        - name: tag_count_max
+          in: query
+          schema: { type: integer, minimum: 0 }
+        - name: tag_mode
+          in: query
+          schema: { type: string, enum: [any, all] }
+        - name: sort
+          in: query
+          schema: { type: string, enum: [created_at, updated_at, title, tag_count, primary_tag, relevance] }
+        - name: order
+          in: query
+          schema: { type: string, enum: [asc, desc] }
+      responses:
+        '200':
+          description: Paginated notes
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNote'
+      responses:
+        '201':
+          description: Created note
+  /saved-queries:
+    get:
+      responses:
+        '200':
+          description: Owner-scoped saved queries
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSavedQuery'
+      responses:
+        '201':
+          description: Created saved query
+  /saved-queries/{id}:
+    delete:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Deleted saved query
+  /notes/{id}:
+    get:
+      parameters:
+        - $ref: '#/components/parameters/NoteID'
+      responses:
+        '200':
+          description: Note by id
+    patch:
+      parameters:
+        - $ref: '#/components/parameters/NoteID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchNote'
+      responses:
+        '200':
+          description: Updated note
+    delete:
+      parameters:
+        - $ref: '#/components/parameters/NoteID'
+      responses:
+        '200':
+          description: Deleted note
+  /notes/shared/{slug}:
+    get:
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Public shared note
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PublicSharedNote'
+components:
+  parameters:
+    NoteID:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    CreateNote:
+      type: object
+      required: [content]
+      properties:
+        title: { type: [string, 'null'] }
+        content: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+        archived: { type: boolean }
+        shared: { type: boolean }
+    PatchNote:
+      type: object
+      properties:
+        title: { type: [string, 'null'] }
+        content: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+        archived: { type: boolean }
+        shared: { type: boolean }
+    CreateSavedQuery:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        query: { type: string }
+    PublicSharedNote:
+      type: object
+      properties:
+        title: { type: [string, 'null'] }
+        content: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+        archived: { type: boolean }
+        shared: { type: boolean }
+        share_slug: { type: [string, 'null'] }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
