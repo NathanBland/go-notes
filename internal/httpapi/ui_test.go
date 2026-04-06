@@ -332,6 +332,15 @@ func TestUIHomeBranchesAndCookieInvalidation(t *testing.T) {
 	if !strings.Contains(res.Body.String(), "Continue with OIDC") {
 		t.Fatalf("expected landing page body, got %q", res.Body.String())
 	}
+	if !strings.Contains(res.Body.String(), "Your private workspace for notes that keep their context.") ||
+		!strings.Contains(res.Body.String(), "Write in Markdown") ||
+		!strings.Contains(res.Body.String(), "Find things again") ||
+		!strings.Contains(res.Body.String(), "Share intentionally") {
+		t.Fatalf("expected service-oriented landing page copy, got %q", res.Body.String())
+	}
+	if !strings.Contains(res.Body.String(), `href="/api/v1/healthz"`) || strings.Contains(res.Body.String(), `href="/docs/api.md"`) {
+		t.Fatalf("expected landing page to link only to app-served routes, got %q", res.Body.String())
+	}
 	cookies := res.Result().Cookies()
 	if len(cookies) == 0 || cookies[0].MaxAge != -1 {
 		t.Fatalf("expected invalid session cookie to be expired, got %+v", cookies)

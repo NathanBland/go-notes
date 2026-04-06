@@ -290,7 +290,7 @@ The minimal browser UI now lives at `/`.
 
 It is intentionally small and teaching-focused:
 
-- unauthenticated visitors see a landing page with an OIDC login action
+- unauthenticated visitors see a landing page that summarizes the running service experience: private Markdown notes, tag filtering, saved searches, intentional sharing, OIDC login, and optional API/agent access
 - authenticated users see a server-rendered notes workspace
 - HTMX is used for targeted note reads and edit/create updates
 - Tailwind CSS is loaded from the CDN to keep the asset setup light

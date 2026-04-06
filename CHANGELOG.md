@@ -9,6 +9,7 @@ The project uses an `Unreleased` section during feature work and promotes those 
 ### Changed
 
 - Deployment documentation links now point directly to the canonical guide in [`docs/deployment.md`](docs/deployment.md), so they work cleanly on GitHub and in local clones.
+- The unauthenticated landing page now describes the running service experience around private Markdown notes, tag filtering, saved searches, intentional sharing, and optional API/agent access, while only linking to routes served by the running app.
 
 ## [0.1.0] - 2026-04-06
 

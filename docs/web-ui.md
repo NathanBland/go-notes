@@ -38,7 +38,7 @@ The UI is intentionally not a separate frontend application. The note behavior s
 ## Routes
 
 - `GET /`
-  - public landing page when unauthenticated
+  - public landing page when unauthenticated, with a concise overview of the running service experience: private Markdown notes, tag filtering, saved searches, intentional sharing, OIDC login, and optional API/agent access
   - authenticated workspace when a valid session cookie is present
 - `POST /app/logout`
 - `POST /app/saved-queries`
@@ -66,6 +66,8 @@ The interface uses a small set of HTMX patterns:
 - the saved-query form also uses `hx-post`, which keeps the filter sidebar and note panel in sync after a preset is created
 - the rename-tag form uses `hx-post` so bulk tag cleanup can refresh the workspace without a full page reload
 - active tag filters are preserved across create, read, and edit flows so the workspace stays in the same browsing context
+
+The unauthenticated landing page intentionally avoids linking to repository markdown files through app-local `/docs/...` paths because the Go server does not serve those files. It links to app-served routes, such as the OIDC login route and the API health check, while repository docs remain linked from `README.md`. The page copy should stay service-oriented for someone landing on a deployed notes app rather than repo-oriented for a contributor browsing the source code.
 
 ## Filters
 

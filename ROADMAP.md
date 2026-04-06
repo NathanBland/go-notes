@@ -4,9 +4,13 @@ This file tracks the current roadmap for `go-notes` beyond what is already imple
 
 ## Recently completed
 
+- Refresh the public landing page so it better describes what a user experiences on the running service
+  - explain private Markdown notes, tag filtering, saved searches, intentional sharing, OIDC login, and optional API/agent access from the unauthenticated entry point
+  - keep app actions pointed at routes the running Go server actually serves
+  - add tests and docs so the landing page stays aligned with the teaching surface
 - Improve deployment-guide discoverability from the repository root
-  - add a top-level deployment entry point instead of relying only on a nested `docs/` path
-  - update README deployment links so readers can find the guide immediately
+  - keep the canonical guide in `docs/deployment.md`
+  - update README deployment links so readers can find the guide immediately without machine-specific absolute paths
 - Define a coherent versioning strategy and changelog workflow
   - document tag-driven releases and pre-`1.0.0` version rules
   - add a root changelog with an `Unreleased` section

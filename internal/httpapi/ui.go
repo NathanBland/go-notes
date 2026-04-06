@@ -802,24 +802,48 @@ const uiTemplatesSource = `
   </script>
 </head>
 <body class="min-h-screen bg-stone-950 text-stone-100">
-  <main class="mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-6 py-16">
-    <div class="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-      <section class="rounded-[2rem] border border-teal-400/20 bg-gradient-to-br from-stone-900 via-stone-900 to-teal-950/60 p-8 shadow-2xl shadow-teal-950/30">
+  <main class="mx-auto flex min-h-screen max-w-7xl flex-col justify-center px-6 py-16">
+    <div class="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
+      <section class="rounded-[2rem] border border-teal-400/20 bg-gradient-to-br from-stone-900 via-stone-900 to-teal-950/60 p-8 shadow-2xl shadow-teal-950/30 lg:p-10">
         <p class="mb-3 text-sm uppercase tracking-[0.3em] text-teal-300">go-notes</p>
-        <h1 class="max-w-3xl font-serif text-5xl leading-tight text-stone-50">A small teaching API with just enough interface to feel real.</h1>
-        <p class="mt-6 max-w-2xl text-lg leading-8 text-stone-300">This minimal web surface is intentionally thin. The note behavior still lives in the shared Go services, while HTMX adds focused interactions for login, reading, creating, and updating notes.</p>
+        <h1 class="max-w-4xl font-serif text-5xl leading-tight text-stone-50 md:text-6xl">Your private workspace for notes that keep their context.</h1>
+        <p class="mt-6 max-w-3xl text-lg leading-8 text-stone-300">Sign in to capture Markdown notes, organize them with tags, save useful searches, and come back to the same filtered workspace later. The service keeps your notes private by default, with explicit sharing when you choose to publish a note link.</p>
         <div class="mt-8 flex flex-wrap gap-4">
           <a href="/api/v1/auth/login?redirect_to=/" class="rounded-full bg-teal-300 px-6 py-3 text-sm font-semibold text-stone-950 transition hover:bg-teal-200">Continue with OIDC</a>
-          <a href="/docs/api.md" class="rounded-full border border-stone-700 px-6 py-3 text-sm font-semibold text-stone-200 transition hover:border-stone-500 hover:text-stone-50">Read the API docs</a>
+          <a href="/api/v1/healthz" class="rounded-full border border-stone-700 px-6 py-3 text-sm font-semibold text-stone-200 transition hover:border-stone-500 hover:text-stone-50">Check API health</a>
+        </div>
+        <div class="mt-10 grid gap-3 sm:grid-cols-2">
+          <div class="rounded-2xl border border-stone-800 bg-stone-950/55 p-4">
+            <p class="text-sm font-semibold text-teal-200">Write in Markdown</p>
+            <p class="mt-2 text-sm leading-6 text-stone-400">Create and update notes with a focused editor, then read them with rendered Markdown formatting.</p>
+          </div>
+          <div class="rounded-2xl border border-stone-800 bg-stone-950/55 p-4">
+            <p class="text-sm font-semibold text-teal-200">Find things again</p>
+            <p class="mt-2 text-sm leading-6 text-stone-400">Search, filter by tags, sort your list, and save searches you use often.</p>
+          </div>
+          <div class="rounded-2xl border border-stone-800 bg-stone-950/55 p-4">
+            <p class="text-sm font-semibold text-teal-200">Keep tags tidy</p>
+            <p class="mt-2 text-sm leading-6 text-stone-400">Use tag browsing and rename workflows to keep related notes grouped together.</p>
+          </div>
+          <div class="rounded-2xl border border-stone-800 bg-stone-950/55 p-4">
+            <p class="text-sm font-semibold text-teal-200">Share intentionally</p>
+            <p class="mt-2 text-sm leading-6 text-stone-400">Notes stay owner-scoped unless you explicitly turn on sharing for a public link.</p>
+          </div>
         </div>
       </section>
-      <aside class="rounded-[2rem] border border-amber-300/20 bg-stone-900/80 p-8 shadow-xl shadow-black/20">
-        <h2 class="font-serif text-3xl text-amber-100">What this UI is for</h2>
-        <ul class="mt-6 space-y-4 text-stone-300">
-          <li class="rounded-2xl border border-stone-800 bg-stone-950/60 p-4">Trigger the OIDC login flow from a browser.</li>
-          <li class="rounded-2xl border border-stone-800 bg-stone-950/60 p-4">Create and revise notes without needing a separate SPA.</li>
-          <li class="rounded-2xl border border-stone-800 bg-stone-950/60 p-4">See how server-rendered HTML can live beside a JSON API and MCP surface.</li>
-        </ul>
+      <aside class="space-y-5">
+        <section class="rounded-[2rem] border border-amber-300/20 bg-stone-900/80 p-8 shadow-xl shadow-black/20">
+          <h2 class="font-serif text-3xl text-amber-100">What you can try here</h2>
+          <ul class="mt-6 space-y-4 text-stone-300">
+            <li class="rounded-2xl border border-stone-800 bg-stone-950/60 p-4">Sign in with your configured identity provider.</li>
+            <li class="rounded-2xl border border-stone-800 bg-stone-950/60 p-4">Start a note immediately from the top of the workspace.</li>
+            <li class="rounded-2xl border border-stone-800 bg-stone-950/60 p-4">Use saved queries and tag filters when your note list grows.</li>
+          </ul>
+        </section>
+        <section class="rounded-[2rem] border border-stone-800 bg-stone-900/70 p-6">
+          <h2 class="font-serif text-2xl text-stone-50">API and agent friendly</h2>
+          <p class="mt-3 text-sm leading-6 text-stone-400">The same notes can also be reached through the JSON API and local MCP tools when those clients are configured for your deployment.</p>
+        </section>
       </aside>
     </div>
   </main>
