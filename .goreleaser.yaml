@@ -1,0 +1,69 @@
+version: 2
+
+project_name: go-notes-mcp
+
+env:
+  - CGO_ENABLED=0
+  - GO111MODULE=on
+
+before:
+  hooks:
+    - go mod tidy
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+builds:
+  - id: go-notes-mcp
+    main: ./cmd/mcp
+    binary: go-notes-mcp
+    flags:
+      - -trimpath
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    ldflags:
+      - -s -w
+      - -X main.version={{ .Version }}
+      - -X main.commit={{ .Commit }}
+      - -X main.date={{ .CommitDate }}
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - id: go-notes-mcp
+    ids:
+      - go-notes-mcp
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats:
+      - tar.gz
+    files:
+      - README.md
+      - docs/mcp.md
+      - docs/mcp-install.md
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+changelog:
+  use: git
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "^chore:"
+      - "^Merge "
+
+release:
+  github:
+    owner: nathanbland
+    name: go-notes
+  disable: false
+  draft: false
+  prerelease: auto
+  name_template: "{{ .ProjectName }} v{{ .Version }}"
