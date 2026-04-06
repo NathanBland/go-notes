@@ -118,6 +118,13 @@ type TagSummary struct {
 	Count int64  `json:"count"`
 }
 
+// RenameTagResult summarizes an owner-scoped bulk tag rename operation.
+type RenameTagResult struct {
+	OldTag        string `json:"old_tag"`
+	NewTag        string `json:"new_tag"`
+	AffectedNotes int64  `json:"affected_notes"`
+}
+
 // RelatedNote keeps a related note together with the tag overlap used to rank
 // it. This gives MCP clients enough structure to explain why a note was
 // returned without moving overlap logic out of PostgreSQL.
@@ -154,6 +161,7 @@ type Store interface {
 	DeleteNoteForOwner(ctx context.Context, id, ownerUserID uuid.UUID) (int64, error)
 	ListNotesForOwner(ctx context.Context, filters ListFilters) ([]Note, int64, error)
 	ListTagsForOwner(ctx context.Context, ownerUserID uuid.UUID) ([]TagSummary, error)
+	RenameTagForOwner(ctx context.Context, ownerUserID uuid.UUID, oldTag, newTag string) ([]Note, error)
 	FindRelatedNotesForOwner(ctx context.Context, ownerUserID, noteID uuid.UUID, limit int32) ([]RelatedNote, error)
 	CreateSavedQuery(ctx context.Context, input CreateSavedQueryInput) (SavedQuery, error)
 	GetSavedQueryForOwner(ctx context.Context, id, ownerUserID uuid.UUID) (SavedQuery, error)

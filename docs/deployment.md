@@ -65,6 +65,60 @@ For Portainer-style usage:
 - provide the required environment variables through Portainer or an env file
 - run the `migrate` service intentionally as an operational step before promoting the API service
 
+## Production hardening
+
+Use this checklist before calling a deployment production-ready:
+
+- terminate TLS at your reverse proxy or load balancer
+- set `BASE_URL` to the public `https://...` origin the browser will actually use
+- set `SESSION_COOKIE_SECURE=true` so the session cookie is only sent over HTTPS
+- keep `OIDC_REDIRECT_URL` aligned with the same public HTTPS origin
+- keep PostgreSQL and Valkey off the public internet unless you have a specific network reason to expose them
+- pin the API image to a version tag instead of `latest`
+
+### HTTPS and reverse proxies
+
+`go-notes` does not try to terminate TLS itself. The expected production shape is:
+
+- a reverse proxy or ingress handles HTTPS
+- the proxy forwards traffic to the API container over an internal network
+- the browser only ever sees the public HTTPS origin
+
+That means local development values like `BASE_URL=http://localhost:8080` should not be reused in production. Use the public HTTPS origin instead.
+
+### Cookie implications
+
+The session cookie is server-side and opaque, but the browser still needs secure settings around it.
+
+- use `SESSION_COOKIE_SECURE=true` in production
+- keep the app behind HTTPS so modern browsers will consistently send the cookie
+- avoid mixing HTTP and HTTPS origins during login flows, or the cookie and OIDC callback behavior will feel inconsistent
+
+### Reverse proxy expectations
+
+At the proxy layer, preserve the basic HTTP behavior the app depends on:
+
+- forward the original host and request path unchanged
+- allow the OIDC callback route at `/api/v1/auth/callback`
+- avoid stripping cookies or caching authenticated HTML/API responses
+- apply request-body limits that still allow normal JSON note payloads
+
+If you later add proxy-specific headers or trusted-proxy logic, document those changes in this file and keep the README production example aligned.
+
+### Rate limiting in production
+
+The built-in throttling currently protects:
+
+- `GET /api/v1/auth/login`
+- `GET /api/v1/auth/callback`
+- `GET /api/v1/notes/shared/{slug}`
+
+For production, treat that as the baseline rather than the whole policy:
+
+- keep the app-level throttling enabled through `THROTTLE_REQUESTS_PER_SECOND` and `THROTTLE_BURST`
+- consider adding proxy or gateway rate limiting in front of the API as a second layer
+- review the shared-note route especially if you expect public links to be exposed widely
+
 ## Published image model
 
 The GitHub Actions workflows publish:

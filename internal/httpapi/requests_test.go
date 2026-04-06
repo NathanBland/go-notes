@@ -156,6 +156,31 @@ func TestParseCreateNoteRequestValidationAndDecodeErrors(t *testing.T) {
 	}
 }
 
+func TestParseRenameTagRequest(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/tags/rename", strings.NewReader(`{"old_tag":" planning ","new_tag":" roadmap "}`))
+	oldTag, newTag, fields, err := parseRenameTagRequest(req)
+	if err != nil {
+		t.Fatalf("unexpected rename-tag error: %v", err)
+	}
+	if len(fields) != 0 {
+		t.Fatalf("unexpected rename-tag validation errors: %v", fields)
+	}
+	if oldTag != "planning" || newTag != "roadmap" {
+		t.Fatalf("expected trimmed tag values, got old=%q new=%q", oldTag, newTag)
+	}
+}
+
+func TestParseRenameTagRequestValidation(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/tags/rename", strings.NewReader(`{"old_tag":"same","new_tag":"same"}`))
+	_, _, fields, err := parseRenameTagRequest(req)
+	if err != nil {
+		t.Fatalf("unexpected rename-tag validation error: %v", err)
+	}
+	if fields["new_tag"] == "" {
+		t.Fatalf("expected same-tag validation error, got %v", fields)
+	}
+}
+
 func TestParsePatchNoteRequestValidationCases(t *testing.T) {
 	ownerID := uuid.MustParse("11111111-1111-1111-1111-111111111111")
 	noteID := uuid.MustParse("22222222-2222-2222-2222-222222222222")

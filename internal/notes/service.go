@@ -204,6 +204,34 @@ func (s *Service) ListTags(ctx context.Context, ownerUserID uuid.UUID) ([]TagSum
 	return s.store.ListTagsForOwner(ctx, ownerUserID)
 }
 
+// RenameTag rewrites one owner-scoped tag across matching notes.
+// PostgreSQL performs the ordered array rewrite so REST, UI, and MCP all teach
+// the same normalization rules instead of rebuilding tag-set logic in Go.
+func (s *Service) RenameTag(ctx context.Context, ownerUserID uuid.UUID, oldTag, newTag string) (RenameTagResult, error) {
+	oldTag = strings.TrimSpace(oldTag)
+	newTag = strings.TrimSpace(newTag)
+	if oldTag == "" || newTag == "" {
+		return RenameTagResult{}, errors.New("both old_tag and new_tag are required")
+	}
+	if oldTag == newTag {
+		return RenameTagResult{OldTag: oldTag, NewTag: newTag, AffectedNotes: 0}, nil
+	}
+
+	updated, err := s.store.RenameTagForOwner(ctx, ownerUserID, oldTag, newTag)
+	if err != nil {
+		return RenameTagResult{}, err
+	}
+	for _, note := range updated {
+		s.cacheNote(ctx, note)
+		s.cacheSharedNote(ctx, note)
+	}
+	return RenameTagResult{
+		OldTag:        oldTag,
+		NewTag:        newTag,
+		AffectedNotes: int64(len(updated)),
+	}, nil
+}
+
 // FindRelatedNotes returns other owner-scoped notes ranked by overlapping tags.
 // The SQL layer computes overlap and deterministic ordering so MCP gets a
 // stable explanation of "related" without rebuilding set logic in Go.

@@ -67,15 +67,25 @@ This file tracks the current roadmap for `go-notes` beyond what is already imple
   - `find_related_notes` based on overlapping tags, ranked in PostgreSQL with deterministic tie-breaks
   - return the related note plus the shared tags and overlap count so agent output stays explainable
   - verify owner scoping so other users' notes never participate in the ranking
+- Add owner-scoped bulk tag cleanup with `rename_tag`
+  - expose a shared tag-rename workflow through REST, the server-rendered UI, and MCP
+  - keep the rewrite logic in PostgreSQL so order preservation and deduplication stay consistent across surfaces
+  - verify cache refresh and owner scoping with unit and integration coverage
 - Run a focused UI consistency audit for the server-rendered workspace
   - move note creation to the top of the sidebar because it is the primary action
   - remove decorative section chips that do not add teaching value
   - keep the HTMX behavior but simplify hierarchy, wording, and section consistency
   - add tests that lock in the sidebar order and the removal of low-value labels
+- Broaden the teaching surface around ownership boundaries, cache behavior, and error translation
+  - add and document examples showing how cross-owner note access still returns the same public `not_found` envelope
+  - document how note caches are refreshed while list caches rely on short TTLs
+  - keep the examples aligned with tests so the behavior is easy to discover and trust
+- Add a focused production-hardening documentation pass
+  - document HTTPS expectations, reverse proxy behavior, secure-cookie implications, and production throttling guidance
+  - keep the README and deployment docs aligned so public readers can find the hardening guidance quickly
 
 ## Near-term roadmap
 - Continue higher-level MCP discovery and organization helpers where they stay teachable
-  - `rename_tag` for owner-scoped bulk tag cleanup
   - `suggest_tags_for_note` if the implementation remains simple and explainable
 
 ## MCP and LLM roadmap
@@ -95,9 +105,7 @@ This file tracks the current roadmap for `go-notes` beyond what is already imple
 
 ## Planned teaching improvements
 
-- Broaden API examples and tests around ownership boundaries, cache behavior, and error translation
 - Add more documentation around indexing strategy, SQL performance tradeoffs, and when to push logic into PostgreSQL
-- Add stronger examples for production-minded hardening such as HTTPS deployment notes and rate-limiting policy
 
 ## Longer-term ideas
 

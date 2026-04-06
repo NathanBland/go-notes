@@ -32,6 +32,10 @@ type fakeStore struct {
 	listErr       error
 	tagItems      []TagSummary
 	tagErr        error
+	renamedNotes  []Note
+	renameErr     error
+	lastRenameOld string
+	lastRenameNew string
 	relatedItems  []RelatedNote
 	relatedErr    error
 	lastRelatedID uuid.UUID
@@ -114,6 +118,14 @@ func (f *fakeStore) ListTagsForOwner(ctx context.Context, ownerUserID uuid.UUID)
 		return nil, f.tagErr
 	}
 	return f.tagItems, nil
+}
+func (f *fakeStore) RenameTagForOwner(ctx context.Context, ownerUserID uuid.UUID, oldTag, newTag string) ([]Note, error) {
+	f.lastRenameOld = oldTag
+	f.lastRenameNew = newTag
+	if f.renameErr != nil {
+		return nil, f.renameErr
+	}
+	return f.renamedNotes, nil
 }
 func (f *fakeStore) FindRelatedNotesForOwner(ctx context.Context, ownerUserID, id uuid.UUID, limit int32) ([]RelatedNote, error) {
 	f.lastRelatedID = id
@@ -465,6 +477,43 @@ func TestListTagsDelegatesToStore(t *testing.T) {
 	}
 	if len(tags) != 2 || tags[0].Tag != "go" || tags[0].Count != 2 {
 		t.Fatalf("unexpected tag list: %+v", tags)
+	}
+}
+
+func TestRenameTagUsesStoreAndRefreshesCaches(t *testing.T) {
+	ownerID := uuid.MustParse("11111111-1111-1111-1111-111111111111")
+	noteID := uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+	slug := "shared-1"
+	store := &fakeStore{
+		renamedNotes: []Note{{
+			ID:          noteID,
+			OwnerUserID: ownerID,
+			Content:     "body",
+			Tags:        []string{"roadmap", "mcp"},
+			Shared:      true,
+			ShareSlug:   &slug,
+			CreatedAt:   time.Now().UTC(),
+			UpdatedAt:   time.Now().UTC(),
+		}},
+	}
+	cache := &fakeCache{values: map[string]string{}}
+	service := NewService(store, cache, time.Minute, time.Minute)
+
+	result, err := service.RenameTag(context.Background(), ownerID, " planning ", " roadmap ")
+	if err != nil {
+		t.Fatalf("unexpected rename error: %v", err)
+	}
+	if result.OldTag != "planning" || result.NewTag != "roadmap" || result.AffectedNotes != 1 {
+		t.Fatalf("unexpected rename result: %+v", result)
+	}
+	if store.lastRenameOld != "planning" || store.lastRenameNew != "roadmap" {
+		t.Fatalf("expected trimmed tags to reach store, got old=%q new=%q", store.lastRenameOld, store.lastRenameNew)
+	}
+	if _, ok := cache.values[noteCacheKey(ownerID.String(), noteID.String())]; !ok {
+		t.Fatal("expected renamed note to refresh the note cache")
+	}
+	if _, ok := cache.values[sharedCacheKey(slug)]; !ok {
+		t.Fatal("expected renamed shared note to refresh the shared cache")
 	}
 }
 

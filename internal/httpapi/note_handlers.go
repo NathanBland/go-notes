@@ -125,6 +125,29 @@ func (a *API) handleCreateSavedQuery(w http.ResponseWriter, r *http.Request) {
 	writeData(w, http.StatusCreated, savedQuery)
 }
 
+func (a *API) handleRenameTag(w http.ResponseWriter, r *http.Request) {
+	user, ok := userFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized", "authentication required", nil)
+		return
+	}
+	oldTag, newTag, fields, err := parseRenameTagRequest(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_json", "request body must be valid JSON", nil)
+		return
+	}
+	if len(fields) > 0 {
+		writeError(w, http.StatusBadRequest, "validation_error", "invalid request", fields)
+		return
+	}
+	result, err := a.notesService.RenameTag(r.Context(), user.ID, oldTag, newTag)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "tags_error", "failed to rename tag", nil)
+		return
+	}
+	writeData(w, http.StatusOK, result)
+}
+
 func (a *API) handleDeleteSavedQuery(w http.ResponseWriter, r *http.Request) {
 	user, ok := userFromContext(r.Context())
 	if !ok {

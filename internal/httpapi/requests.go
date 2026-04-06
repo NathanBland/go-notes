@@ -28,6 +28,11 @@ type createSavedQueryRequest struct {
 	Query string `json:"query"`
 }
 
+type renameTagRequest struct {
+	OldTag string `json:"old_tag"`
+	NewTag string `json:"new_tag"`
+}
+
 func decodeJSONBody(r *http.Request, dst any) error {
 	defer r.Body.Close()
 	decoder := json.NewDecoder(io.LimitReader(r.Body, 1<<20))
@@ -171,6 +176,26 @@ func parseCreateSavedQueryRequest(r *http.Request, ownerUserID uuid.UUID) (notes
 		Name:        strings.TrimSpace(payload.Name),
 		Query:       strings.TrimSpace(payload.Query),
 	}, fields, nil
+}
+
+func parseRenameTagRequest(r *http.Request) (string, string, map[string]string, error) {
+	var payload renameTagRequest
+	if err := decodeJSONBody(r, &payload); err != nil {
+		return "", "", nil, err
+	}
+	fields := map[string]string{}
+	oldTag := strings.TrimSpace(payload.OldTag)
+	newTag := strings.TrimSpace(payload.NewTag)
+	if oldTag == "" {
+		fields["old_tag"] = "is required"
+	}
+	if newTag == "" {
+		fields["new_tag"] = "is required"
+	}
+	if oldTag != "" && newTag != "" && oldTag == newTag {
+		fields["new_tag"] = "must be different from old_tag"
+	}
+	return oldTag, newTag, fields, nil
 }
 
 func parseListFilters(values url.Values, ownerUserID uuid.UUID) (notes.ListFilters, map[string]string) {

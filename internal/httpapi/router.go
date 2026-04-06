@@ -51,6 +51,7 @@ func NewHandler(deps Dependencies) http.Handler {
 	mux.Handle("POST /app/logout", api.requireUser(http.HandlerFunc(api.handleUILogout)))
 	mux.Handle("POST /app/saved-queries", api.requireUser(http.HandlerFunc(api.handleUICreateSavedQuery)))
 	mux.Handle("POST /app/saved-queries/{id}/delete", api.requireUser(http.HandlerFunc(api.handleUIDeleteSavedQuery)))
+	mux.Handle("POST /app/tags/rename", api.requireUser(http.HandlerFunc(api.handleUIRenameTag)))
 	mux.Handle("POST /app/notes", api.requireUser(http.HandlerFunc(api.handleUICreateNote)))
 	mux.Handle("GET /app/notes/{id}", api.requireUser(http.HandlerFunc(api.handleUIShowNote)))
 	mux.Handle("GET /app/notes/{id}/edit", api.requireUser(http.HandlerFunc(api.handleUIEditNote)))
@@ -63,6 +64,7 @@ func NewHandler(deps Dependencies) http.Handler {
 	mux.Handle("GET /api/v1/saved-queries", api.requireUser(http.HandlerFunc(api.handleListSavedQueries)))
 	mux.Handle("POST /api/v1/saved-queries", api.requireUser(http.HandlerFunc(api.handleCreateSavedQuery)))
 	mux.Handle("DELETE /api/v1/saved-queries/{id}", api.requireUser(http.HandlerFunc(api.handleDeleteSavedQuery)))
+	mux.Handle("POST /api/v1/tags/rename", api.requireUser(http.HandlerFunc(api.handleRenameTag)))
 	mux.Handle("GET /api/v1/notes/shared/{slug}", throttle(http.HandlerFunc(api.handleGetSharedNote)))
 	mux.HandleFunc("/", api.handleNotFound)
 

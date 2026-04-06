@@ -10,6 +10,7 @@ The UI is meant to make local development and teaching easier:
 - read notes without a separate API client
 - create and update notes with simple HTML forms
 - filter notes by one or more tags without leaving the page
+- rename a tag across the current owner's notes from the same sidebar
 - save and reapply named filter presets without rebuilding them by hand
 - show how HTMX can add targeted interactivity without replacing server-rendered HTML
 
@@ -44,6 +45,8 @@ The UI is intentionally not a separate frontend application. The note behavior s
   - save the current filter set as a named saved query
 - `POST /app/saved-queries/{id}/delete`
   - delete one saved query
+- `POST /app/tags/rename`
+  - bulk rename one owner-scoped tag to another
 - `GET /app/notes/{id}`
   - HTMX detail fragment for the selected note
 - `GET /app/notes/{id}/edit`
@@ -61,6 +64,7 @@ The interface uses a small set of HTMX patterns:
 - the edit action uses `hx-get` to load an edit form into the same panel
 - create and update forms use `hx-post` and replace the workspace region after success
 - the saved-query form also uses `hx-post`, which keeps the filter sidebar and note panel in sync after a preset is created
+- the rename-tag form uses `hx-post` so bulk tag cleanup can refresh the workspace without a full page reload
 - active tag filters are preserved across create, read, and edit flows so the workspace stays in the same browsing context
 
 ## Filters
@@ -91,6 +95,15 @@ The workspace now includes a saved-query card above the filter form.
 - the saved query stores the normalized list-query string, not a separate UI-only payload
 
 That keeps the browser experience aligned with the API and MCP surfaces.
+
+## Tag rename workflow
+
+The sidebar now also includes a small owner-scoped tag-rename form.
+
+- it takes a current tag and a replacement tag
+- it preserves the current list filters while the rename runs
+- it re-renders the workspace through HTMX on success
+- it uses the same shared notes service and SQL-backed rename logic as REST and MCP
 
 ## Styling approach
 

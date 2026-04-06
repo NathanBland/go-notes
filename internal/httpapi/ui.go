@@ -46,6 +46,8 @@ type workspaceViewModel struct {
 	FilterQuery  string
 	SaveQuery    saveQueryFormValues
 	SaveErrors   map[string]string
+	RenameTag    renameTagFormValues
+	RenameErrors map[string]string
 	CreateForm   noteFormValues
 	CreateErrors map[string]string
 	EditForm     noteFormValues
@@ -78,6 +80,11 @@ type saveQueryFormValues struct {
 	Name string
 }
 
+type renameTagFormValues struct {
+	OldTag string
+	NewTag string
+}
+
 type noteDetailViewModel struct {
 	Note        notes.Note
 	Filters     noteListFormValues
@@ -98,7 +105,7 @@ func (a *API) handleHome(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vm, status := a.workspaceForRequest(r, user, saveQueryFormValues{}, nil, noteFormValues{}, nil, noteFormValues{}, nil)
+	vm, status := a.workspaceForRequest(r, user, saveQueryFormValues{}, nil, renameTagFormValues{}, nil, noteFormValues{}, nil, noteFormValues{}, nil)
 	a.renderFullPage(w, status, vm)
 }
 
@@ -174,7 +181,7 @@ func (a *API) handleUICreateNote(w http.ResponseWriter, r *http.Request) {
 
 	input, form, fields := parseCreateNoteForm(r, user.ID)
 	if len(fields) > 0 {
-		vm, _ := a.workspaceForRequest(r, user, saveQueryFormValues{}, nil, form, fields, noteFormValues{}, nil)
+		vm, _ := a.workspaceForRequest(r, user, saveQueryFormValues{}, nil, renameTagFormValues{}, nil, form, fields, noteFormValues{}, nil)
 		status := http.StatusBadRequest
 		a.renderWorkspaceOrPage(w, r, status, vm)
 		return
@@ -183,7 +190,7 @@ func (a *API) handleUICreateNote(w http.ResponseWriter, r *http.Request) {
 	created, err := a.notesService.Create(r.Context(), input)
 	if err != nil {
 		filters, filterForm, filterErrors := a.parseUIListFilters(r, user.ID)
-		vm := a.workspaceForSelection(r, user, filters, filterForm, filterErrors, nil, false, saveQueryFormValues{}, nil, form, map[string]string{"content": "Unable to create the note right now."}, noteFormValues{}, nil)
+		vm := a.workspaceForSelection(r, user, filters, filterForm, filterErrors, nil, false, saveQueryFormValues{}, nil, renameTagFormValues{}, nil, form, map[string]string{"content": "Unable to create the note right now."}, noteFormValues{}, nil)
 		status := http.StatusInternalServerError
 		a.renderWorkspaceOrPage(w, r, status, vm)
 		return
@@ -206,7 +213,7 @@ func (a *API) handleUIUpdateNote(w http.ResponseWriter, r *http.Request) {
 	input, form, fields := parseUpdateNoteForm(r, noteID, user.ID)
 	if len(fields) > 0 {
 		filters, filterForm, filterErrors := a.parseUIListFilters(r, user.ID)
-		vm := a.workspaceForSelection(r, user, filters, filterForm, filterErrors, nil, true, saveQueryFormValues{}, nil, noteFormValues{}, nil, form, fields)
+		vm := a.workspaceForSelection(r, user, filters, filterForm, filterErrors, nil, true, saveQueryFormValues{}, nil, renameTagFormValues{}, nil, noteFormValues{}, nil, form, fields)
 		status := http.StatusBadRequest
 		a.renderWorkspaceOrPage(w, r, status, vm)
 		return
@@ -216,7 +223,7 @@ func (a *API) handleUIUpdateNote(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		status := a.noteHTMLStatus(err)
 		filters, filterForm, filterErrors := a.parseUIListFilters(r, user.ID)
-		vm := a.workspaceForSelection(r, user, filters, filterForm, filterErrors, nil, true, saveQueryFormValues{}, nil, noteFormValues{}, nil, form, map[string]string{"content": "Unable to update that note right now."})
+		vm := a.workspaceForSelection(r, user, filters, filterForm, filterErrors, nil, true, saveQueryFormValues{}, nil, renameTagFormValues{}, nil, noteFormValues{}, nil, form, map[string]string{"content": "Unable to update that note right now."})
 		a.renderWorkspaceOrPage(w, r, status, vm)
 		return
 	}
@@ -237,7 +244,7 @@ func (a *API) handleUICreateSavedQuery(w http.ResponseWriter, r *http.Request) {
 		saveErrors["name"] = "Saved query name is required."
 	}
 	if len(filterErrors) > 0 || len(saveErrors) > 0 {
-		vm := a.workspaceForSelection(r, user, filters, filterForm, filterErrors, nil, false, saveForm, saveErrors, noteFormValues{}, nil, noteFormValues{}, nil)
+		vm := a.workspaceForSelection(r, user, filters, filterForm, filterErrors, nil, false, saveForm, saveErrors, renameTagFormValues{}, nil, noteFormValues{}, nil, noteFormValues{}, nil)
 		a.renderWorkspaceOrPage(w, r, http.StatusBadRequest, vm)
 		return
 	}
@@ -247,7 +254,7 @@ func (a *API) handleUICreateSavedQuery(w http.ResponseWriter, r *http.Request) {
 		Query:       notes.EncodeListFilters(filters),
 	})
 	if err != nil {
-		vm := a.workspaceForSelection(r, user, filters, filterForm, filterErrors, nil, false, saveForm, map[string]string{"name": "Unable to save that query right now."}, noteFormValues{}, nil, noteFormValues{}, nil)
+		vm := a.workspaceForSelection(r, user, filters, filterForm, filterErrors, nil, false, saveForm, map[string]string{"name": "Unable to save that query right now."}, renameTagFormValues{}, nil, noteFormValues{}, nil, noteFormValues{}, nil)
 		a.renderWorkspaceOrPage(w, r, http.StatusInternalServerError, vm)
 		return
 	}
@@ -267,7 +274,7 @@ func (a *API) handleUIDeleteSavedQuery(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := a.notesService.DeleteSavedQuery(r.Context(), user.ID, savedQueryID); err != nil && err != notes.ErrNotFound {
 		filters, filterForm, filterErrors := a.parseUIListFilters(r, user.ID)
-		vm := a.workspaceForSelection(r, user, filters, filterForm, filterErrors, nil, false, saveQueryFormValues{}, map[string]string{"name": "Unable to delete that saved query right now."}, noteFormValues{}, nil, noteFormValues{}, nil)
+		vm := a.workspaceForSelection(r, user, filters, filterForm, filterErrors, nil, false, saveQueryFormValues{}, map[string]string{"name": "Unable to delete that saved query right now."}, renameTagFormValues{}, nil, noteFormValues{}, nil, noteFormValues{}, nil)
 		a.renderWorkspaceOrPage(w, r, http.StatusInternalServerError, vm)
 		return
 	}
@@ -276,6 +283,27 @@ func (a *API) handleUIDeleteSavedQuery(w http.ResponseWriter, r *http.Request) {
 		redirectTo = "/?" + query
 	}
 	http.Redirect(w, r, redirectTo, http.StatusSeeOther)
+}
+
+func (a *API) handleUIRenameTag(w http.ResponseWriter, r *http.Request) {
+	user, ok := userFromContext(r.Context())
+	if !ok {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	form, fields := parseRenameTagForm(r)
+	filters, filterForm, filterErrors := a.parseUIListFilters(r, user.ID)
+	if len(fields) > 0 {
+		vm := a.workspaceForSelection(r, user, filters, filterForm, filterErrors, nil, false, saveQueryFormValues{}, nil, form, fields, noteFormValues{}, nil, noteFormValues{}, nil)
+		a.renderWorkspaceOrPage(w, r, http.StatusBadRequest, vm)
+		return
+	}
+	if _, err := a.notesService.RenameTag(r.Context(), user.ID, form.OldTag, form.NewTag); err != nil {
+		vm := a.workspaceForSelection(r, user, filters, filterForm, filterErrors, nil, false, saveQueryFormValues{}, nil, form, map[string]string{"new_tag": "Unable to rename that tag right now."}, noteFormValues{}, nil, noteFormValues{}, nil)
+		a.renderWorkspaceOrPage(w, r, http.StatusInternalServerError, vm)
+		return
+	}
+	a.redirectOrRenderWorkspace(w, r, user, nil, false)
 }
 
 func (a *API) maybeUser(r *http.Request) (auth.User, bool, bool) {
@@ -290,7 +318,7 @@ func (a *API) maybeUser(r *http.Request) (auth.User, bool, bool) {
 	return user, true, false
 }
 
-func (a *API) workspaceForRequest(r *http.Request, user auth.User, saveForm saveQueryFormValues, saveErrors map[string]string, createForm noteFormValues, createErrors map[string]string, editForm noteFormValues, editErrors map[string]string) (workspaceViewModel, int) {
+func (a *API) workspaceForRequest(r *http.Request, user auth.User, saveForm saveQueryFormValues, saveErrors map[string]string, renameForm renameTagFormValues, renameErrors map[string]string, createForm noteFormValues, createErrors map[string]string, editForm noteFormValues, editErrors map[string]string) (workspaceViewModel, int) {
 	filters, filterForm, filterErrors := a.parseUIListFilters(r, user.ID)
 	status := http.StatusOK
 	if len(filterErrors) > 0 {
@@ -301,10 +329,10 @@ func (a *API) workspaceForRequest(r *http.Request, user auth.User, saveForm save
 	if selectedStatus != http.StatusOK && status == http.StatusOK {
 		status = selectedStatus
 	}
-	return a.workspaceForSelection(r, user, filters, filterForm, filterErrors, selected, editing, saveForm, saveErrors, createForm, createErrors, editForm, editErrors), status
+	return a.workspaceForSelection(r, user, filters, filterForm, filterErrors, selected, editing, saveForm, saveErrors, renameForm, renameErrors, createForm, createErrors, editForm, editErrors), status
 }
 
-func (a *API) workspaceForSelection(r *http.Request, user auth.User, filters notes.ListFilters, filterForm noteListFormValues, filterErrors map[string]string, selected *notes.Note, editing bool, saveForm saveQueryFormValues, saveErrors map[string]string, createForm noteFormValues, createErrors map[string]string, editForm noteFormValues, editErrors map[string]string) workspaceViewModel {
+func (a *API) workspaceForSelection(r *http.Request, user auth.User, filters notes.ListFilters, filterForm noteListFormValues, filterErrors map[string]string, selected *notes.Note, editing bool, saveForm saveQueryFormValues, saveErrors map[string]string, renameForm renameTagFormValues, renameErrors map[string]string, createForm noteFormValues, createErrors map[string]string, editForm noteFormValues, editErrors map[string]string) workspaceViewModel {
 	result, err := a.notesService.List(r.Context(), filters)
 	items := []notes.Note{}
 	if err == nil {
@@ -331,6 +359,8 @@ func (a *API) workspaceForSelection(r *http.Request, user auth.User, filters not
 		FilterQuery:  buildFilterQuery(filterForm),
 		SaveQuery:    saveForm,
 		SaveErrors:   saveErrors,
+		RenameTag:    renameForm,
+		RenameErrors: renameErrors,
 		CreateForm:   createForm,
 		CreateErrors: createErrors,
 		EditForm:     editForm,
@@ -368,7 +398,7 @@ func (a *API) redirectOrRenderWorkspace(w http.ResponseWriter, r *http.Request, 
 		http.Redirect(w, r, target, http.StatusSeeOther)
 		return
 	}
-	vm := a.workspaceForSelection(r, user, filters, filterForm, filterErrors, selected, editing, saveQueryFormValues{}, nil, noteFormValues{}, nil, noteFormValues{}, nil)
+	vm := a.workspaceForSelection(r, user, filters, filterForm, filterErrors, selected, editing, saveQueryFormValues{}, nil, renameTagFormValues{}, nil, noteFormValues{}, nil, noteFormValues{}, nil)
 	a.renderHTML(w, http.StatusOK, "workspace", vm)
 }
 
@@ -552,6 +582,25 @@ func parseUpdateNoteForm(r *http.Request, noteID, ownerID uuid.UUID) (notes.Patc
 		Shared:      &shared,
 	}
 	return input, form, fields
+}
+
+func parseRenameTagForm(r *http.Request) (renameTagFormValues, map[string]string) {
+	_ = r.ParseForm()
+	form := renameTagFormValues{
+		OldTag: strings.TrimSpace(r.FormValue("old_tag")),
+		NewTag: strings.TrimSpace(r.FormValue("new_tag")),
+	}
+	fields := map[string]string{}
+	if form.OldTag == "" {
+		fields["old_tag"] = "Current tag is required."
+	}
+	if form.NewTag == "" {
+		fields["new_tag"] = "New tag is required."
+	}
+	if form.OldTag != "" && form.OldTag == form.NewTag {
+		fields["new_tag"] = "New tag must be different."
+	}
+	return form, fields
 }
 
 func parseTags(raw string) []string {
@@ -1137,6 +1186,35 @@ const uiTemplatesSource = `
           <a href="/" class="rounded-full border border-stone-700 px-5 py-3 text-sm font-semibold text-stone-200 transition hover:border-stone-500 hover:text-stone-50">Reset</a>
         </div>
       </form>
+      <div class="mt-6 border-t border-stone-800 pt-6">
+        <h3 class="font-serif text-xl text-stone-100">Rename tag</h3>
+        <p class="mt-1 text-sm text-stone-400">Rewrite one owner-scoped tag across matching notes using the same SQL-backed rules as the API and MCP tools.</p>
+        <form class="mt-4 space-y-4" method="post" action="/app/tags/rename" hx-post="/app/tags/rename" hx-target="#workspace" hx-swap="outerHTML">
+          <input type="hidden" name="ui_saved_query_id" value="{{.Filters.SavedQueryID}}">
+          <input type="hidden" name="ui_search" value="{{.Filters.Search}}">
+          <input type="hidden" name="ui_search_mode" value="{{.Filters.SearchMode}}">
+          <input type="hidden" name="ui_has_title" value="{{.Filters.HasTitle}}">
+          <input type="hidden" name="ui_tags" value="{{.Filters.Tags}}">
+          <input type="hidden" name="ui_tag_count_min" value="{{.Filters.TagCountMin}}">
+          <input type="hidden" name="ui_tag_count_max" value="{{.Filters.TagCountMax}}">
+          <input type="hidden" name="ui_tag_mode" value="{{.Filters.Mode}}">
+          <input type="hidden" name="ui_sort" value="{{.Filters.Sort}}">
+          <input type="hidden" name="ui_order" value="{{.Filters.Order}}">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="block">
+              <span class="mb-2 block text-sm font-medium text-stone-300">Current tag</span>
+              <input class="w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-stone-100 outline-none transition focus:border-amber-300" type="text" name="old_tag" value="{{.RenameTag.OldTag}}" placeholder="planning">
+              {{with index .RenameErrors "old_tag"}}<p class="mt-2 text-sm text-rose-300">{{.}}</p>{{end}}
+            </label>
+            <label class="block">
+              <span class="mb-2 block text-sm font-medium text-stone-300">New tag</span>
+              <input class="w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-stone-100 outline-none transition focus:border-amber-300" type="text" name="new_tag" value="{{.RenameTag.NewTag}}" placeholder="roadmap">
+              {{with index .RenameErrors "new_tag"}}<p class="mt-2 text-sm text-rose-300">{{.}}</p>{{end}}
+            </label>
+          </div>
+          <button class="rounded-full border border-amber-300/40 px-5 py-3 text-sm font-semibold text-amber-100 transition hover:border-amber-200 hover:text-amber-50">Rename tag</button>
+        </form>
+      </div>
     </section>
 
     <section class="rounded-[1.75rem] border border-stone-800 bg-stone-900/85 p-5 shadow-xl shadow-black/20">

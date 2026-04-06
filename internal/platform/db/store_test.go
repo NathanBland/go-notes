@@ -26,6 +26,7 @@ type fakeQueryer struct {
 	count           int64
 	countErr        error
 	tagRows         []dbsqlc.ListTagsForOwnerRow
+	renameRows      []dbsqlc.RenameTagForOwnerRow
 	relatedRows     []dbsqlc.FindRelatedNotesForOwnerRow
 	savedQuery      dbsqlc.SavedQuery
 	savedQueries    []dbsqlc.SavedQuery
@@ -41,6 +42,7 @@ type fakeQueryer struct {
 	lastSavedGet    dbsqlc.GetSavedQueryForOwnerParams
 	lastSavedDelete dbsqlc.DeleteSavedQueryForOwnerParams
 	lastRelated     dbsqlc.FindRelatedNotesForOwnerParams
+	lastRename      dbsqlc.RenameTagForOwnerParams
 }
 
 func (f *fakeQueryer) UpsertUserFromOIDC(ctx context.Context, arg dbsqlc.UpsertUserFromOIDCParams) (dbsqlc.User, error) {
@@ -80,6 +82,10 @@ func (f *fakeQueryer) CountNotesForOwner(ctx context.Context, arg dbsqlc.CountNo
 }
 func (f *fakeQueryer) ListTagsForOwner(ctx context.Context, ownerUserID uuid.UUID) ([]dbsqlc.ListTagsForOwnerRow, error) {
 	return f.tagRows, f.noteErr
+}
+func (f *fakeQueryer) RenameTagForOwner(ctx context.Context, arg dbsqlc.RenameTagForOwnerParams) ([]dbsqlc.RenameTagForOwnerRow, error) {
+	f.lastRename = arg
+	return f.renameRows, f.noteErr
 }
 func (f *fakeQueryer) FindRelatedNotesForOwner(ctx context.Context, arg dbsqlc.FindRelatedNotesForOwnerParams) ([]dbsqlc.FindRelatedNotesForOwnerRow, error) {
 	f.lastRelated = arg
@@ -202,6 +208,14 @@ func TestStoreMethodsAdaptQueryParams(t *testing.T) {
 			{Tag: "go", Count: 2},
 			{Tag: "mcp", Count: 1},
 		},
+		renameRows: []dbsqlc.RenameTagForOwnerRow{{
+			ID:          uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+			OwnerUserID: uuid.MustParse("11111111-1111-1111-1111-111111111111"),
+			Content:     "hello",
+			Tags:        []string{"roadmap"},
+			CreatedAt:   pgtype.Timestamptz{Time: now, Valid: true},
+			UpdatedAt:   pgtype.Timestamptz{Time: now, Valid: true},
+		}},
 		relatedRows: []dbsqlc.FindRelatedNotesForOwnerRow{{
 			ID:             uuid.MustParse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
 			OwnerUserID:    uuid.MustParse("11111111-1111-1111-1111-111111111111"),
@@ -291,6 +305,17 @@ func TestStoreMethodsAdaptQueryParams(t *testing.T) {
 	}
 	if len(tagSummary) != 2 || tagSummary[0].Tag != "go" || tagSummary[0].Count != 2 {
 		t.Fatalf("unexpected tag summary: %+v", tagSummary)
+	}
+
+	renamed, err := store.RenameTagForOwner(ctx, queryer.note.OwnerUserID, "planning", "roadmap")
+	if err != nil {
+		t.Fatalf("unexpected rename tag error: %v", err)
+	}
+	if len(renamed) != 1 || len(renamed[0].Tags) != 1 || renamed[0].Tags[0] != "roadmap" {
+		t.Fatalf("unexpected rename tag result: %+v", renamed)
+	}
+	if queryer.lastRename.OldTag != "planning" || queryer.lastRename.NewTag != "roadmap" || queryer.lastRename.OwnerUserID != queryer.note.OwnerUserID {
+		t.Fatalf("unexpected rename tag params: %+v", queryer.lastRename)
 	}
 
 	related, err := store.FindRelatedNotesForOwner(ctx, queryer.note.OwnerUserID, queryer.note.ID, 4)

@@ -32,6 +32,8 @@ What is available today:
   - `GET /api/v1/saved-queries`
   - `POST /api/v1/saved-queries`
   - `DELETE /api/v1/saved-queries/{id}`
+- Tag management endpoint:
+  - `POST /api/v1/tags/rename`
 - PostgreSQL-backed persistence through checked-in SQL and generated `sqlc` code
 - Valkey-backed session storage, pending OIDC state storage, note cache, shared-note cache, and list cache
 - Request throttling on login, callback, and public shared-note routes
@@ -62,6 +64,7 @@ What is available today:
 - Advanced note search now supports both plain substring matching and PostgreSQL full-text search with `sort=relevance`
 - Owner-scoped saved queries can store canonical list filters in PostgreSQL and be reused from REST, the web UI, and MCP with `saved_query_id`
 - Public shared-note responses that intentionally omit internal note IDs and owner IDs so a share link does not leak private identifiers
+- Structured error translation that keeps owner-scoped note misses and cross-owner lookups behind the same public `not_found` envelope
 - Docker-based local development for PostgreSQL, Valkey, migrations, and the hot-reloading API
 - Production-ready API and MCP Dockerfiles plus a production-oriented compose stack for registry-backed deployment
 - A first local MCP interface over stdio with note, tag, saved-query, and related-note discovery tools, including `find_related_notes`
@@ -87,11 +90,13 @@ Recent completion:
 - advanced note filtering now also includes explicit `has_title` and tag-count range filters, while full-text search stays opt-in through `search_mode=fts`
 - saved queries now store normalized owner-scoped list presets and replay them through the same validation path before explicit request values override them
 - MCP now includes `find_related_notes`, which ranks owner-scoped related notes by overlapping tags in PostgreSQL and returns the shared tags that explain each match
+- tag cleanup now includes a shared owner-scoped `rename_tag` workflow across REST, the browser UI, and MCP
 - the web UI sidebar now leads with note creation and uses simpler instructional section copy instead of decorative labels
 - the integration-backed handwritten-code coverage gate is green again after the recent UI, tag, and MCP additions
 - the security audit pass now includes regression coverage for cross-owner note access and a hardened shared-note response shape
 - the MCP server now has validated GoReleaser packaging plus install docs for Codex, Claude Code, Cursor, and Windsurf
 - the repository now includes production Dockerfiles, a Portainer-friendly production compose file, and GitHub Actions workflows for the API image and MCP delivery pipeline
+- the docs now include concrete examples for ownership boundaries, cache behavior, structured errors, and production HTTPS/reverse-proxy expectations
 
 ## Docs
 
@@ -181,7 +186,7 @@ For container-based deployment, the project now distinguishes between three arti
 
 - [`docker-compose.yml`](/Users/nathanbland/projects/codex-workspace/go-notes/docker-compose.yml): development stack with bind mounts and hot reload
 - [`docker-compose.prod.yml`](/Users/nathanbland/projects/codex-workspace/go-notes/docker-compose.prod.yml): production-oriented stack using published images
-- [Deployment guide](/Users/nathanbland/projects/codex-workspace/go-notes/docs/deployment.md): explains how the development stack, production stack, and README example fit together
+- [Deployment guide](/Users/nathanbland/projects/codex-workspace/go-notes/docs/deployment.md): explains how the development stack, production stack, README example, and production hardening expectations fit together
 
 The production stack expects a published API image, an external OIDC provider, and environment-driven secrets. The `migrate` service is included as an explicit operational step instead of running automatically on every container start.
 
@@ -258,6 +263,7 @@ Current MCP tools:
 - `save_query`
 - `delete_saved_query`
 - `list_tags`
+- `rename_tag`
 - `set_note_tags`
 - `share_note`
 - `unshare_note`

@@ -26,6 +26,7 @@ type NotesService interface {
 	List(ctx context.Context, filters notes.ListFilters) (notes.ListResult, error)
 	ListSavedQueries(ctx context.Context, ownerUserID uuid.UUID) ([]notes.SavedQuery, error)
 	Patch(ctx context.Context, input notes.PatchInput) (notes.Note, error)
+	RenameTag(ctx context.Context, ownerUserID uuid.UUID, oldTag, newTag string) (notes.RenameTagResult, error)
 }
 
 // Server wraps the MCP-facing note tools with a fixed local-development owner.
@@ -86,6 +87,11 @@ type modifyNoteTagsArgs struct {
 	Tags []string `json:"tags"`
 }
 
+type renameTagArgs struct {
+	OldTag string `json:"old_tag"`
+	NewTag string `json:"new_tag"`
+}
+
 type noteIDArgs struct {
 	ID string `json:"id"`
 }
@@ -142,6 +148,7 @@ func NewServer(notesService NotesService, ownerID uuid.UUID) *mcpserver.MCPServe
 	s.AddTool(api.saveQueryTool(), mcp.NewTypedToolHandler(api.handleSaveQuery))
 	s.AddTool(api.deleteSavedQueryTool(), mcp.NewTypedToolHandler(api.handleDeleteSavedQuery))
 	s.AddTool(api.listTagsTool(), mcp.NewTypedToolHandler(api.handleListTags))
+	s.AddTool(api.renameTagTool(), mcp.NewTypedToolHandler(api.handleRenameTag))
 	s.AddTool(api.setNoteTagsTool(), mcp.NewTypedToolHandler(api.handleSetNoteTags))
 	s.AddTool(api.shareNoteTool(), mcp.NewTypedToolHandler(api.handleShareNote))
 	s.AddTool(api.unshareNoteTool(), mcp.NewTypedToolHandler(api.handleUnshareNote))
@@ -274,6 +281,14 @@ func (s *Server) deleteSavedQueryTool() mcp.Tool {
 func (s *Server) listTagsTool() mcp.Tool {
 	return mcp.NewTool("list_tags",
 		mcp.WithDescription("List the current owner-scoped tag vocabulary with note counts for the configured local MCP owner."),
+	)
+}
+
+func (s *Server) renameTagTool() mcp.Tool {
+	return mcp.NewTool("rename_tag",
+		mcp.WithDescription("Rename one owner-scoped tag across matching notes for the configured local MCP owner."),
+		mcp.WithString("old_tag", mcp.Required(), mcp.Description("Existing tag name to replace")),
+		mcp.WithString("new_tag", mcp.Required(), mcp.Description("Replacement tag name")),
 	)
 }
 
@@ -525,6 +540,22 @@ func (s *Server) handleListTags(ctx context.Context, _ mcp.CallToolRequest, _ st
 	}
 	output := listTagsOutput{Tags: tags}
 	return mcp.NewToolResultStructured(output, fmt.Sprintf("Returned %d tags.", len(tags))), nil
+}
+
+func (s *Server) handleRenameTag(ctx context.Context, _ mcp.CallToolRequest, args renameTagArgs) (*mcp.CallToolResult, error) {
+	oldTag := strings.TrimSpace(args.OldTag)
+	newTag := strings.TrimSpace(args.NewTag)
+	if oldTag == "" || newTag == "" {
+		return mcp.NewToolResultError("old_tag and new_tag are required"), nil
+	}
+	if oldTag == newTag {
+		return mcp.NewToolResultError("new_tag must be different from old_tag"), nil
+	}
+	result, err := s.notes.RenameTag(ctx, s.ownerID, oldTag, newTag)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("failed to rename tag: %v", err)), nil
+	}
+	return mcp.NewToolResultStructured(result, fmt.Sprintf("Renamed %q to %q on %d notes.", result.OldTag, result.NewTag, result.AffectedNotes)), nil
 }
 
 func (s *Server) handleSetNoteTags(ctx context.Context, _ mcp.CallToolRequest, args modifyNoteTagsArgs) (*mcp.CallToolResult, error) {

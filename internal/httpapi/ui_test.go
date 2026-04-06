@@ -109,6 +109,22 @@ func TestCloneValuesAndCopyIfMissing(t *testing.T) {
 	}
 }
 
+func TestParseRenameTagForm(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/app/tags/rename", strings.NewReader(url.Values{
+		"old_tag": []string{" planning "},
+		"new_tag": []string{" roadmap "},
+	}.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	form, fields := parseRenameTagForm(req)
+	if len(fields) != 0 {
+		t.Fatalf("unexpected rename-tag form errors: %#v", fields)
+	}
+	if form.OldTag != "planning" || form.NewTag != "roadmap" {
+		t.Fatalf("expected trimmed rename-tag form values, got %+v", form)
+	}
+}
+
 func TestFilterQueryHelpers(t *testing.T) {
 	form := noteListFormValues{
 		SavedQueryID: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
@@ -221,7 +237,7 @@ func TestWorkspaceHelpersAndRedirect(t *testing.T) {
 	}
 
 	req := httptest.NewRequest(http.MethodGet, "/?tags=work,planning&tag_mode=all&sort=primary_tag&order=asc&note="+note.ID.String(), nil)
-	vm, status := api.workspaceForRequest(req, user, saveQueryFormValues{}, nil, noteFormValues{}, nil, noteFormValues{}, nil)
+	vm, status := api.workspaceForRequest(req, user, saveQueryFormValues{}, nil, renameTagFormValues{}, nil, noteFormValues{}, nil, noteFormValues{}, nil)
 	if status != http.StatusOK {
 		t.Fatalf("expected workspace status 200, got %d", status)
 	}
@@ -269,7 +285,7 @@ func TestWorkspaceTemplatePrioritizesCreateSectionAndRemovesDecorativeChips(t *t
 	}
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	vm, status := api.workspaceForRequest(req, user, saveQueryFormValues{}, nil, noteFormValues{}, nil, noteFormValues{}, nil)
+	vm, status := api.workspaceForRequest(req, user, saveQueryFormValues{}, nil, renameTagFormValues{}, nil, noteFormValues{}, nil, noteFormValues{}, nil)
 	if status != http.StatusOK {
 		t.Fatalf("expected workspace status 200, got %d", status)
 	}
@@ -445,6 +461,66 @@ func TestUICreateAndUpdateBranches(t *testing.T) {
 	}
 }
 
+func TestUIRenameTagBranches(t *testing.T) {
+	userID := uuid.MustParse("11111111-1111-1111-1111-111111111111")
+	user := auth.User{ID: userID}
+	noteStore := &fakeNotesStore{
+		renameErr: errors.New("boom"),
+		listItems: []notes.Note{{
+			ID:          uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+			OwnerUserID: userID,
+			Content:     "body",
+			Tags:        []string{"planning"},
+		}},
+		listTotal: 1,
+	}
+	api := &API{
+		authService:       auth.NewService(&fakeUserStore{user: user}, &fakeOIDCClient{}, &fakeSessionStore{session: auth.Session{ID: "session-1", UserID: userID, ExpiresAt: time.Now().UTC().Add(time.Hour)}}, time.Hour, time.Minute),
+		notesService:      notes.NewService(noteStore, &fakeCache{values: map[string]string{}}, time.Minute, time.Minute),
+		sessionCookieName: "go_notes_session",
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/app/tags/rename", strings.NewReader("old_tag=planning&new_tag=roadmap"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	res := httptest.NewRecorder()
+	api.handleUIRenameTag(res, req)
+	if res.Code != http.StatusSeeOther {
+		t.Fatalf("expected unauthenticated rename redirect, got %d", res.Code)
+	}
+
+	req = httptest.NewRequest(http.MethodPost, "/app/tags/rename", strings.NewReader("old_tag=same&new_tag=same"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req = req.WithContext(withUser(context.Background(), user))
+	res = httptest.NewRecorder()
+	api.handleUIRenameTag(res, req)
+	if res.Code != http.StatusBadRequest {
+		t.Fatalf("expected invalid rename form status, got %d", res.Code)
+	}
+
+	req = httptest.NewRequest(http.MethodPost, "/app/tags/rename", strings.NewReader("old_tag=planning&new_tag=roadmap"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req = req.WithContext(withUser(context.Background(), user))
+	res = httptest.NewRecorder()
+	api.handleUIRenameTag(res, req)
+	if res.Code != http.StatusInternalServerError {
+		t.Fatalf("expected rename failure status, got %d", res.Code)
+	}
+
+	noteStore.renameErr = nil
+	req = httptest.NewRequest(http.MethodPost, "/app/tags/rename", strings.NewReader("old_tag=planning&new_tag=roadmap"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("HX-Request", "true")
+	req = req.WithContext(withUser(context.Background(), user))
+	res = httptest.NewRecorder()
+	api.handleUIRenameTag(res, req)
+	if res.Code != http.StatusOK {
+		t.Fatalf("expected htmx rename success, got %d", res.Code)
+	}
+	if noteStore.lastRenameOld != "planning" || noteStore.lastRenameNew != "roadmap" {
+		t.Fatalf("expected rename inputs to reach notes service, got old=%q new=%q", noteStore.lastRenameOld, noteStore.lastRenameNew)
+	}
+}
+
 func TestWorkspaceAndRenderHelpers(t *testing.T) {
 	userID := uuid.MustParse("11111111-1111-1111-1111-111111111111")
 	user := auth.User{ID: userID}
@@ -459,7 +535,7 @@ func TestWorkspaceAndRenderHelpers(t *testing.T) {
 	}
 
 	req := httptest.NewRequest(http.MethodGet, "/?tag_mode=bad&note=bad", nil)
-	vm, status := api.workspaceForRequest(req, user, saveQueryFormValues{}, nil, noteFormValues{}, nil, noteFormValues{}, nil)
+	vm, status := api.workspaceForRequest(req, user, saveQueryFormValues{}, nil, renameTagFormValues{}, nil, noteFormValues{}, nil, noteFormValues{}, nil)
 	if status != http.StatusBadRequest {
 		t.Fatalf("expected invalid workspace status, got %d", status)
 	}

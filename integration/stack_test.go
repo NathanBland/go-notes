@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -564,6 +565,87 @@ func TestListTagsReturnsOwnerScopedCounts(t *testing.T) {
 	for _, item := range summary {
 		if item.Tag == "private" {
 			t.Fatalf("expected other-user tags to be excluded, got %+v", summary)
+		}
+	}
+}
+
+func TestRenameTagIsOwnerScopedAndRefreshesCaches(t *testing.T) {
+	stack := newIntegrationStack(t)
+	user := stack.createUser(t, "rename-owner")
+	other := stack.createUser(t, "rename-other")
+
+	titleOne := "Planning one"
+	first, err := stack.notesService.Create(stack.ctx, notes.CreateInput{
+		OwnerUserID: user.ID,
+		Title:       &titleOne,
+		Content:     "first",
+		Tags:        []string{"planning", "go", "planning"},
+	})
+	if err != nil {
+		t.Fatalf("failed to create first note: %v", err)
+	}
+
+	titleTwo := "Planning two"
+	second, err := stack.notesService.Create(stack.ctx, notes.CreateInput{
+		OwnerUserID: user.ID,
+		Title:       &titleTwo,
+		Content:     "second",
+		Tags:        []string{"mcp", "planning"},
+		Shared:      true,
+	})
+	if err != nil {
+		t.Fatalf("failed to create second note: %v", err)
+	}
+
+	otherTitle := "Other planning"
+	otherNote, err := stack.notesService.Create(stack.ctx, notes.CreateInput{
+		OwnerUserID: other.ID,
+		Title:       &otherTitle,
+		Content:     "other",
+		Tags:        []string{"planning"},
+	})
+	if err != nil {
+		t.Fatalf("failed to create other note: %v", err)
+	}
+
+	result, err := stack.notesService.RenameTag(stack.ctx, user.ID, "planning", "roadmap")
+	if err != nil {
+		t.Fatalf("failed to rename tag: %v", err)
+	}
+	if result.AffectedNotes != 2 {
+		t.Fatalf("expected 2 affected notes, got %+v", result)
+	}
+
+	reloadedFirst, err := stack.notesService.GetByIDForOwner(stack.ctx, user.ID, first.ID)
+	if err != nil {
+		t.Fatalf("failed to reload first note: %v", err)
+	}
+	if len(reloadedFirst.Tags) != 2 || reloadedFirst.Tags[0] != "roadmap" || reloadedFirst.Tags[1] != "go" {
+		t.Fatalf("expected ordered deduped tags on first note, got %+v", reloadedFirst.Tags)
+	}
+
+	reloadedSecond, err := stack.notesService.GetByIDForOwner(stack.ctx, user.ID, second.ID)
+	if err != nil {
+		t.Fatalf("failed to reload second note: %v", err)
+	}
+	if len(reloadedSecond.Tags) != 2 || reloadedSecond.Tags[1] != "roadmap" {
+		t.Fatalf("expected renamed tag on second note, got %+v", reloadedSecond.Tags)
+	}
+
+	otherReloaded, err := stack.notesService.GetByIDForOwner(stack.ctx, other.ID, otherNote.ID)
+	if err != nil {
+		t.Fatalf("failed to reload other note: %v", err)
+	}
+	if len(otherReloaded.Tags) != 1 || otherReloaded.Tags[0] != "planning" {
+		t.Fatalf("expected other owner's tags to remain unchanged, got %+v", otherReloaded.Tags)
+	}
+
+	if payload, ok := stack.cache.Get(stack.ctx, noteCacheKey(user.ID, first.ID)); !ok || !strings.Contains(payload, "roadmap") {
+		t.Fatalf("expected renamed first note to refresh cache, ok=%v payload=%q", ok, payload)
+	}
+	if second.ShareSlug != nil {
+		if payload, ok := stack.cache.Get(stack.ctx, sharedNoteCacheKey(*second.ShareSlug)); !ok || !strings.Contains(payload, "roadmap") {
+			t.Fatalf("expected renamed shared note to refresh shared cache, ok=%v payload=%q", ok, payload)
 		}
 	}
 }

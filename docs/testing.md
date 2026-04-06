@@ -8,6 +8,7 @@ Use standard `go test` table-driven tests for:
 - PATCH body parsing
 - service-level cache behavior
 - MCP tool argument normalization and MCP tool behavior, including note updates, delete/state helpers, and tag discovery/mutation helpers
+- owner-scoped bulk tag rename behavior and UI form parsing
 - OIDC/session boundary behavior with fakes
 - HTML form parsing and minimal UI helpers
 - config parsing and helper behavior
@@ -83,14 +84,16 @@ Suggested coverage:
 - plain substring search and PostgreSQL full-text search behave as expected
 - ranked relevance sorting is only accepted with the explicit full-text search mode
 - owner-scoped tag summaries are aggregated correctly from PostgreSQL
+- owner-scoped tag rename rewrites arrays in PostgreSQL without touching another owner's notes
 - related-note discovery is ranked correctly from PostgreSQL tag overlap and never crosses owner boundaries
 - saved queries persist, list, load, and delete correctly in PostgreSQL
 - owner-scoped notes stay unreadable, unpatchable, and undeletable by a different authenticated user
 - note, shared-note, and list cache behavior is observable against real Valkey-backed services
 - public shared-note responses do not expose internal note or owner identifiers
+- JSON/API handlers translate `notes.ErrNotFound` into the stable public `not_found` envelope
 - MCP tool handlers are covered with unit tests against the shared note service boundary
 - saved-query behavior is covered in REST, UI helper, MCP, and integration tests
-- the minimal web UI is covered for guest rendering, authenticated rendering, and note create/read/update flows
+- the minimal web UI is covered for guest rendering, authenticated rendering, note create/read/update flows, and the HTMX-backed tag-rename path
 
 ## Coverage policy
 

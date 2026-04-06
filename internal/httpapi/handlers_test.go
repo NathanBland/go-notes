@@ -122,6 +122,10 @@ type fakeNotesStore struct {
 	savedItems      []notes.SavedQuery
 	savedItem       notes.SavedQuery
 	savedErr        error
+	renamedNotes    []notes.Note
+	renameErr       error
+	lastRenameOld   string
+	lastRenameNew   string
 	lastSavedCreate notes.CreateSavedQueryInput
 	lastSavedDelete uuid.UUID
 	lastListFilters notes.ListFilters
@@ -181,6 +185,14 @@ func (f *fakeNotesStore) ListNotesForOwner(ctx context.Context, filters notes.Li
 }
 func (f *fakeNotesStore) ListTagsForOwner(ctx context.Context, ownerUserID uuid.UUID) ([]notes.TagSummary, error) {
 	return nil, nil
+}
+func (f *fakeNotesStore) RenameTagForOwner(ctx context.Context, ownerUserID uuid.UUID, oldTag, newTag string) ([]notes.Note, error) {
+	f.lastRenameOld = oldTag
+	f.lastRenameNew = newTag
+	if f.renameErr != nil {
+		return nil, f.renameErr
+	}
+	return f.renamedNotes, nil
 }
 func (f *fakeNotesStore) FindRelatedNotesForOwner(ctx context.Context, ownerUserID, id uuid.UUID, limit int32) ([]notes.RelatedNote, error) {
 	return nil, nil
@@ -345,6 +357,63 @@ func TestSavedQueryEndpoints(t *testing.T) {
 	handler.ServeHTTP(res, req)
 	if res.Code != http.StatusOK || store.lastSavedDelete != savedID {
 		t.Fatalf("expected saved query delete, got status=%d lastDeleted=%s", res.Code, store.lastSavedDelete)
+	}
+}
+
+func TestRenameTagEndpoint(t *testing.T) {
+	userID := uuid.MustParse("11111111-1111-1111-1111-111111111111")
+	store := &fakeNotesStore{
+		renamedNotes: []notes.Note{{
+			ID:          uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+			OwnerUserID: userID,
+			Content:     "hello",
+			Tags:        []string{"roadmap"},
+			CreatedAt:   time.Now().UTC(),
+			UpdatedAt:   time.Now().UTC(),
+		}},
+	}
+	handler := newTestHandlerWithDeps(Dependencies{
+		NotesService: notes.NewService(store, &fakeCache{values: map[string]string{}}, time.Minute, time.Minute),
+	})
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/tags/rename", strings.NewReader(`{"old_tag":"planning","new_tag":"roadmap"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{Name: "go_notes_session", Value: "session-1"})
+	res := httptest.NewRecorder()
+	handler.ServeHTTP(res, req)
+	if res.Code != http.StatusOK {
+		t.Fatalf("expected rename tag 200, got %d body=%q", res.Code, res.Body.String())
+	}
+	if store.lastRenameOld != "planning" || store.lastRenameNew != "roadmap" {
+		t.Fatalf("expected rename inputs to reach notes service, got old=%q new=%q", store.lastRenameOld, store.lastRenameNew)
+	}
+
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/tags/rename", strings.NewReader(`{"old_tag":"same","new_tag":"same"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{Name: "go_notes_session", Value: "session-1"})
+	res = httptest.NewRecorder()
+	handler.ServeHTTP(res, req)
+	if res.Code != http.StatusBadRequest {
+		t.Fatalf("expected rename tag validation error, got %d body=%q", res.Code, res.Body.String())
+	}
+}
+
+func TestGetNoteTranslatesNotFoundIntoErrorEnvelope(t *testing.T) {
+	handler := newTestHandlerWithDeps(Dependencies{
+		NotesService: notes.NewService(&fakeNotesStore{getErr: notes.ErrNotFound}, &fakeCache{values: map[string]string{}}, time.Minute, time.Minute),
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/notes/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", nil)
+	req.SetPathValue("id", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+	req.AddCookie(&http.Cookie{Name: "go_notes_session", Value: "session-1"})
+	res := httptest.NewRecorder()
+	handler.ServeHTTP(res, req)
+
+	if res.Code != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d", res.Code)
+	}
+	if !strings.Contains(res.Body.String(), `"code":"not_found"`) {
+		t.Fatalf("expected structured not_found envelope, got %q", res.Body.String())
 	}
 }
 

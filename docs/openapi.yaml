@@ -118,6 +118,17 @@ paths:
       responses:
         '200':
           description: Deleted saved query
+  /tags/rename:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RenameTag'
+      responses:
+        '200':
+          description: Renamed tag across one owner's matching notes
   /notes/{id}:
     get:
       parameters:
@@ -197,6 +208,12 @@ components:
       properties:
         name: { type: string }
         query: { type: string }
+    RenameTag:
+      type: object
+      required: [old_tag, new_tag]
+      properties:
+        old_tag: { type: string }
+        new_tag: { type: string }
     PublicSharedNote:
       type: object
       properties:

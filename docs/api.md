@@ -25,6 +25,10 @@ Base path: `/api/v1`
 - `POST /saved-queries`
 - `DELETE /saved-queries/{id}`
 
+## Tag management
+
+- `POST /tags/rename`
+
 Saved queries are owner-scoped named list-query presets.
 
 - they store the same note-list query parameters the API already understands
@@ -37,6 +41,8 @@ Public shared notes intentionally use a reduced response shape:
 - no internal note `id`
 - no `owner_user_id`
 - the public `share_slug` is still included because it is already the public identifier used in the route
+
+Owner-scoped note reads, updates, and deletes intentionally translate cross-owner lookups into the same `not_found` envelope as a truly missing note. That keeps the API from leaking whether another user's note UUID exists.
 
 ## List query parameters
 
@@ -139,6 +145,27 @@ Saved query list response:
 }
 ```
 
+Tag rename request:
+
+```json
+{
+  "old_tag": "planning",
+  "new_tag": "roadmap"
+}
+```
+
+Tag rename response:
+
+```json
+{
+  "data": {
+    "old_tag": "planning",
+    "new_tag": "roadmap",
+    "affected_notes": 2
+  }
+}
+```
+
 Validation errors:
 
 ```json
@@ -152,3 +179,19 @@ Validation errors:
   }
 }
 ```
+
+Ownership-preserving not-found error:
+
+```json
+{
+  "error": {
+    "code": "not_found",
+    "message": "note not found"
+  }
+}
+```
+
+Cache behavior example:
+
+- note-by-id and shared-note caches are refreshed after owner-scoped updates such as `PATCH /notes/{id}` and `POST /tags/rename`
+- list caches use short TTLs instead of trying to fan out invalidation to every possible filter combination

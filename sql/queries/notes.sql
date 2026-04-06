@@ -213,6 +213,45 @@ WHERE owner_user_id = sqlc.arg(owner_user_id)
 GROUP BY expanded.tag
 ORDER BY count(*) DESC, lower(expanded.tag) ASC, expanded.tag ASC;
 
+-- Bulk tag rename intentionally lives in SQL so the same ordered rewrite and
+-- deduplication rules apply across REST, UI, and MCP.
+-- name: RenameTagForOwner :many
+WITH candidate_notes AS (
+    SELECT
+        id,
+        (
+            SELECT COALESCE(array_agg(tag ORDER BY first_ordinal), ARRAY[]::text[])
+            FROM (
+                SELECT renamed.tag, min(renamed.ordinality) AS first_ordinal
+                FROM (
+                    SELECT
+                        CASE
+                            WHEN btrim(tag) = sqlc.arg(old_tag)::text THEN sqlc.arg(new_tag)::text
+                            ELSE tag
+                        END AS tag,
+                        ordinality
+                    FROM unnest(tags) WITH ORDINALITY AS expanded(tag, ordinality)
+                    WHERE btrim(tag) <> ''
+                ) AS renamed
+                GROUP BY renamed.tag
+            ) AS deduped
+        ) AS rewritten_tags
+    FROM notes
+    WHERE notes.owner_user_id = sqlc.arg(owner_user_id)
+      AND notes.tags && ARRAY[sqlc.arg(old_tag)::text]
+),
+updated AS (
+    UPDATE notes
+    SET
+        tags = candidate_notes.rewritten_tags,
+        updated_at = now()
+    FROM candidate_notes
+    WHERE notes.id = candidate_notes.id
+    RETURNING notes.*
+)
+SELECT *
+FROM updated;
+
 -- Related-note discovery intentionally stays in SQL so overlap ranking,
 -- owner scoping, and deterministic ordering are shared by every caller.
 -- name: FindRelatedNotesForOwner :many

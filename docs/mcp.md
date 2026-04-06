@@ -20,6 +20,7 @@ Tools:
 - `save_query`
 - `delete_saved_query`
 - `list_tags`
+- `rename_tag`
 - `set_note_tags`
 - `share_note`
 - `unshare_note`
@@ -167,6 +168,14 @@ This tool mirrors the project’s PATCH-style teaching semantics: omitted fields
 - uses PostgreSQL aggregation instead of rebuilding the vocabulary in Go
 - orders tags by descending usage count, then alphabetically for deterministic agent output
 
+### `rename_tag`
+
+- requires `old_tag`
+- requires `new_tag`
+- rewrites one owner-scoped tag across matching notes
+- uses PostgreSQL to preserve ordered tag arrays while deduplicating the rewritten result
+- refreshes note and shared-note caches through the shared notes service
+
 ### `set_note_tags`
 
 - requires a note UUID
@@ -223,6 +232,8 @@ The MCP implementation is intentionally small so readers can see:
 
 - list the available owner-scoped tags and counts before proposing cleanup:
   - `list_tags`
+- bulk rename a tag after standardizing vocabulary:
+  - `rename_tag` with `old_tag="planning"` and `new_tag="roadmap"`
 - replace a note's tag set after reclassifying it:
   - `set_note_tags` with `id=<uuid>` and `tags=["go","mcp","teaching"]`
 - publish a note without having to build a generic patch payload:

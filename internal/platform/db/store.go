@@ -44,6 +44,7 @@ type queryer interface {
 	ListNotesForOwner(ctx context.Context, arg dbsqlc.ListNotesForOwnerParams) ([]dbsqlc.Note, error)
 	CountNotesForOwner(ctx context.Context, arg dbsqlc.CountNotesForOwnerParams) (int64, error)
 	ListTagsForOwner(ctx context.Context, ownerUserID uuid.UUID) ([]dbsqlc.ListTagsForOwnerRow, error)
+	RenameTagForOwner(ctx context.Context, arg dbsqlc.RenameTagForOwnerParams) ([]dbsqlc.RenameTagForOwnerRow, error)
 	FindRelatedNotesForOwner(ctx context.Context, arg dbsqlc.FindRelatedNotesForOwnerParams) ([]dbsqlc.FindRelatedNotesForOwnerRow, error)
 	CreateSavedQuery(ctx context.Context, arg dbsqlc.CreateSavedQueryParams) (dbsqlc.SavedQuery, error)
 	GetSavedQueryForOwner(ctx context.Context, arg dbsqlc.GetSavedQueryForOwnerParams) (dbsqlc.SavedQuery, error)
@@ -217,6 +218,22 @@ func (s *Store) ListTagsForOwner(ctx context.Context, ownerUserID uuid.UUID) ([]
 	return results, nil
 }
 
+func (s *Store) RenameTagForOwner(ctx context.Context, ownerUserID uuid.UUID, oldTag, newTag string) ([]notes.Note, error) {
+	rows, err := s.queries.RenameTagForOwner(ctx, dbsqlc.RenameTagForOwnerParams{
+		OwnerUserID: ownerUserID,
+		OldTag:      oldTag,
+		NewTag:      newTag,
+	})
+	if err != nil {
+		return nil, err
+	}
+	results := make([]notes.Note, 0, len(rows))
+	for _, row := range rows {
+		results = append(results, toRenamedNote(row))
+	}
+	return results, nil
+}
+
 func (s *Store) FindRelatedNotesForOwner(ctx context.Context, ownerUserID, noteID uuid.UUID, limit int32) ([]notes.RelatedNote, error) {
 	rows, err := s.queries.FindRelatedNotesForOwner(ctx, dbsqlc.FindRelatedNotesForOwnerParams{
 		NoteID:      noteID,
@@ -315,6 +332,21 @@ func toSavedQuery(saved dbsqlc.SavedQuery) notes.SavedQuery {
 		Query:       saved.QueryString,
 		CreatedAt:   timestampValue(saved.CreatedAt),
 		UpdatedAt:   timestampValue(saved.UpdatedAt),
+	}
+}
+
+func toRenamedNote(row dbsqlc.RenameTagForOwnerRow) notes.Note {
+	return notes.Note{
+		ID:          row.ID,
+		OwnerUserID: row.OwnerUserID,
+		Title:       row.Title,
+		Content:     row.Content,
+		Tags:        row.Tags,
+		Archived:    row.Archived,
+		Shared:      row.Shared,
+		ShareSlug:   row.ShareSlug,
+		CreatedAt:   timestampValue(row.CreatedAt),
+		UpdatedAt:   timestampValue(row.UpdatedAt),
 	}
 }
 

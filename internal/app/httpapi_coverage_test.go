@@ -134,6 +134,23 @@ func (s *coverageNotesStore) ListTagsForOwner(ctx context.Context, ownerUserID u
 	return []notes.TagSummary{{Tag: "go", Count: 1}}, nil
 }
 
+func (s *coverageNotesStore) RenameTagForOwner(ctx context.Context, ownerUserID uuid.UUID, oldTag, newTag string) ([]notes.Note, error) {
+	if s.note.OwnerUserID != ownerUserID {
+		return []notes.Note{}, nil
+	}
+	updated := make([]string, 0, len(s.note.Tags))
+	for _, tag := range s.note.Tags {
+		if tag == oldTag {
+			tag = newTag
+		}
+		if tag != "" {
+			updated = append(updated, tag)
+		}
+	}
+	s.note.Tags = updated
+	return []notes.Note{s.note}, nil
+}
+
 func (s *coverageNotesStore) FindRelatedNotesForOwner(ctx context.Context, ownerUserID, id uuid.UUID, limit int32) ([]notes.RelatedNote, error) {
 	if s.note.OwnerUserID != ownerUserID || s.note.ID != id {
 		return []notes.RelatedNote{}, nil

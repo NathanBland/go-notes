@@ -523,6 +523,96 @@ func (q *Queries) ListTagsForOwner(ctx context.Context, ownerUserID uuid.UUID) (
 	return items, nil
 }
 
+const renameTagForOwner = `-- name: RenameTagForOwner :many
+WITH candidate_notes AS (
+    SELECT
+        id,
+        (
+            SELECT COALESCE(array_agg(tag ORDER BY first_ordinal), ARRAY[]::text[])
+            FROM (
+                SELECT renamed.tag, min(renamed.ordinality) AS first_ordinal
+                FROM (
+                    SELECT
+                        CASE
+                            WHEN btrim(tag) = $1::text THEN $2::text
+                            ELSE tag
+                        END AS tag,
+                        ordinality
+                    FROM unnest(tags) WITH ORDINALITY AS expanded(tag, ordinality)
+                    WHERE btrim(tag) <> ''
+                ) AS renamed
+                GROUP BY renamed.tag
+            ) AS deduped
+        ) AS rewritten_tags
+    FROM notes
+    WHERE notes.owner_user_id = $3
+      AND notes.tags && ARRAY[$1::text]
+),
+updated AS (
+    UPDATE notes
+    SET
+        tags = candidate_notes.rewritten_tags,
+        updated_at = now()
+    FROM candidate_notes
+    WHERE notes.id = candidate_notes.id
+    RETURNING notes.id, notes.owner_user_id, notes.title, notes.content, notes.tags, notes.archived, notes.shared, notes.share_slug, notes.created_at, notes.updated_at
+)
+SELECT id, owner_user_id, title, content, tags, archived, shared, share_slug, created_at, updated_at
+FROM updated
+`
+
+type RenameTagForOwnerParams struct {
+	OldTag      string    `json:"old_tag"`
+	NewTag      string    `json:"new_tag"`
+	OwnerUserID uuid.UUID `json:"owner_user_id"`
+}
+
+type RenameTagForOwnerRow struct {
+	ID          uuid.UUID          `json:"id"`
+	OwnerUserID uuid.UUID          `json:"owner_user_id"`
+	Title       *string            `json:"title"`
+	Content     string             `json:"content"`
+	Tags        []string           `json:"tags"`
+	Archived    bool               `json:"archived"`
+	Shared      bool               `json:"shared"`
+	ShareSlug   *string            `json:"share_slug"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+}
+
+// Bulk tag rename intentionally lives in SQL so the same ordered rewrite and
+// deduplication rules apply across REST, UI, and MCP.
+func (q *Queries) RenameTagForOwner(ctx context.Context, arg RenameTagForOwnerParams) ([]RenameTagForOwnerRow, error) {
+	rows, err := q.db.Query(ctx, renameTagForOwner, arg.OldTag, arg.NewTag, arg.OwnerUserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []RenameTagForOwnerRow{}
+	for rows.Next() {
+		var i RenameTagForOwnerRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.OwnerUserID,
+			&i.Title,
+			&i.Content,
+			&i.Tags,
+			&i.Archived,
+			&i.Shared,
+			&i.ShareSlug,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateNotePatch = `-- name: UpdateNotePatch :one
 UPDATE notes
 SET

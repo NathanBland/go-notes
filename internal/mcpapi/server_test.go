@@ -14,30 +14,34 @@ import (
 )
 
 type fakeNotesService struct {
-	listResult  notes.ListResult
-	listErr     error
-	tagResult   []notes.TagSummary
-	tagErr      error
-	related     []notes.RelatedNote
-	relatedErr  error
-	gotNote     notes.Note
-	getErr      error
-	created     notes.Note
-	createErr   error
-	savedQuery  notes.SavedQuery
-	savedList   []notes.SavedQuery
-	savedErr    error
-	lastSaved   notes.CreateSavedQueryInput
-	lastSavedID uuid.UUID
-	updated     notes.Note
-	patchErr    error
-	deleteErr   error
-	lastCreate  notes.CreateInput
-	lastList    notes.ListFilters
-	lastGetID   uuid.UUID
-	lastOwner   uuid.UUID
-	lastPatch   notes.PatchInput
-	lastDelete  uuid.UUID
+	listResult    notes.ListResult
+	listErr       error
+	tagResult     []notes.TagSummary
+	tagErr        error
+	renameResult  notes.RenameTagResult
+	renameErr     error
+	related       []notes.RelatedNote
+	relatedErr    error
+	gotNote       notes.Note
+	getErr        error
+	created       notes.Note
+	createErr     error
+	savedQuery    notes.SavedQuery
+	savedList     []notes.SavedQuery
+	savedErr      error
+	lastSaved     notes.CreateSavedQueryInput
+	lastSavedID   uuid.UUID
+	updated       notes.Note
+	patchErr      error
+	deleteErr     error
+	lastCreate    notes.CreateInput
+	lastList      notes.ListFilters
+	lastGetID     uuid.UUID
+	lastOwner     uuid.UUID
+	lastPatch     notes.PatchInput
+	lastDelete    uuid.UUID
+	lastRenameOld string
+	lastRenameNew string
 }
 
 func (f *fakeNotesService) Create(ctx context.Context, input notes.CreateInput) (notes.Note, error) {
@@ -117,6 +121,16 @@ func (f *fakeNotesService) ListTags(ctx context.Context, ownerUserID uuid.UUID) 
 		return nil, f.tagErr
 	}
 	return f.tagResult, nil
+}
+
+func (f *fakeNotesService) RenameTag(ctx context.Context, ownerUserID uuid.UUID, oldTag, newTag string) (notes.RenameTagResult, error) {
+	f.lastOwner = ownerUserID
+	f.lastRenameOld = oldTag
+	f.lastRenameNew = newTag
+	if f.renameErr != nil {
+		return notes.RenameTagResult{}, f.renameErr
+	}
+	return f.renameResult, nil
 }
 
 func (f *fakeNotesService) Patch(ctx context.Context, input notes.PatchInput) (notes.Note, error) {
@@ -546,6 +560,37 @@ func TestHandleSetNoteTagsAndListTags(t *testing.T) {
 	}
 }
 
+func TestHandleRenameTag(t *testing.T) {
+	ownerID := uuid.MustParse("11111111-1111-1111-1111-111111111111")
+	service := &fakeNotesService{
+		renameResult: notes.RenameTagResult{
+			OldTag:        "planning",
+			NewTag:        "roadmap",
+			AffectedNotes: 2,
+		},
+	}
+	api := &Server{notes: service, ownerID: ownerID}
+
+	result, err := api.handleRenameTag(context.Background(), mcp.CallToolRequest{}, renameTagArgs{OldTag: " planning ", NewTag: " roadmap "})
+	if err != nil {
+		t.Fatalf("unexpected rename-tag handler error: %v", err)
+	}
+	if result.IsError {
+		t.Fatalf("expected rename-tag success, got %+v", result)
+	}
+	if service.lastOwner != ownerID || service.lastRenameOld != "planning" || service.lastRenameNew != "roadmap" {
+		t.Fatalf("unexpected rename-tag service inputs: %+v", service)
+	}
+
+	result, err = api.handleRenameTag(context.Background(), mcp.CallToolRequest{}, renameTagArgs{OldTag: "same", NewTag: "same"})
+	if err != nil {
+		t.Fatalf("unexpected same-tag handler error: %v", err)
+	}
+	if !result.IsError {
+		t.Fatal("expected same-tag rename to return tool error")
+	}
+}
+
 func TestSavedQueryHandlers(t *testing.T) {
 	ownerID := uuid.MustParse("11111111-1111-1111-1111-111111111111")
 	savedID := uuid.MustParse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
@@ -716,6 +761,11 @@ func TestToolDefinitionsAndServerRegistration(t *testing.T) {
 		t.Fatalf("unexpected list tags tool definition: %+v", listTagsTool)
 	}
 
+	renameTagTool := api.renameTagTool()
+	if renameTagTool.Name != "rename_tag" {
+		t.Fatalf("unexpected rename tag tool definition: %+v", renameTagTool)
+	}
+
 	setTagsTool := api.setNoteTagsTool()
 	if setTagsTool.Name != "set_note_tags" {
 		t.Fatalf("unexpected set tags tool definition: %+v", setTagsTool)
@@ -731,8 +781,8 @@ func TestToolDefinitionsAndServerRegistration(t *testing.T) {
 		t.Fatal("expected MCP server to be created")
 	}
 	tools := server.ListTools()
-	if len(tools) != 17 {
-		t.Fatalf("expected 17 registered tools, got %d", len(tools))
+	if len(tools) != 18 {
+		t.Fatalf("expected 18 registered tools, got %d", len(tools))
 	}
 	if _, ok := tools["list_notes"]; !ok {
 		t.Fatalf("expected list_notes to be registered, got %#v", tools)
@@ -763,6 +813,9 @@ func TestToolDefinitionsAndServerRegistration(t *testing.T) {
 	}
 	if _, ok := tools["list_tags"]; !ok {
 		t.Fatalf("expected list_tags to be registered, got %#v", tools)
+	}
+	if _, ok := tools["rename_tag"]; !ok {
+		t.Fatalf("expected rename_tag to be registered, got %#v", tools)
 	}
 	if _, ok := tools["set_note_tags"]; !ok {
 		t.Fatalf("expected set_note_tags to be registered, got %#v", tools)
