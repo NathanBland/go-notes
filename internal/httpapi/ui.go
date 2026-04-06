@@ -970,9 +970,52 @@ const uiTemplatesSource = `
 <section id="workspace" class="grid gap-6 xl:grid-cols-[22rem_1fr]">
   <aside class="space-y-6">
     <section class="rounded-[1.75rem] border border-stone-800 bg-stone-900/85 p-5 shadow-xl shadow-black/20">
-      <div class="flex items-center justify-between">
+      <div>
+        <h2 class="font-serif text-2xl text-stone-50">New note</h2>
+        <p class="mt-1 text-sm text-stone-400">Start here with a title, markdown body, and tags.</p>
+      </div>
+      <form class="mt-5 space-y-4" method="post" action="/app/notes" hx-post="/app/notes" hx-target="#workspace" hx-swap="outerHTML">
+        <input type="hidden" name="ui_saved_query_id" value="{{.Filters.SavedQueryID}}">
+        <input type="hidden" name="ui_search" value="{{.Filters.Search}}">
+        <input type="hidden" name="ui_search_mode" value="{{.Filters.SearchMode}}">
+        <input type="hidden" name="ui_has_title" value="{{.Filters.HasTitle}}">
+        <input type="hidden" name="ui_tags" value="{{.Filters.Tags}}">
+        <input type="hidden" name="ui_tag_count_min" value="{{.Filters.TagCountMin}}">
+        <input type="hidden" name="ui_tag_count_max" value="{{.Filters.TagCountMax}}">
+        <input type="hidden" name="ui_tag_mode" value="{{.Filters.Mode}}">
+        <input type="hidden" name="ui_sort" value="{{.Filters.Sort}}">
+        <input type="hidden" name="ui_order" value="{{.Filters.Order}}">
+        <label class="block">
+          <span class="mb-2 block text-sm font-medium text-stone-300">Title</span>
+          <input class="w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-stone-100 outline-none ring-0 transition focus:border-teal-300" type="text" name="title" value="{{.CreateForm.Title}}" placeholder="Sprint review ideas">
+        </label>
+        <label class="block">
+          <span class="mb-2 block text-sm font-medium text-stone-300">Content</span>
+          <textarea class="min-h-[8rem] w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-stone-100 outline-none transition focus:border-teal-300" name="content" placeholder="Write the body of the note here...">{{.CreateForm.Content}}</textarea>
+          {{with index .CreateErrors "content"}}<p class="mt-2 text-sm text-rose-300">{{.}}</p>{{end}}
+        </label>
+        <label class="block">
+          <span class="mb-2 block text-sm font-medium text-stone-300">Tags</span>
+          <input class="w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-stone-100 outline-none transition focus:border-teal-300" type="text" name="tags" value="{{.CreateForm.Tags}}" placeholder="planning, retro, ideas">
+        </label>
+        <div class="flex flex-wrap gap-4 text-sm text-stone-300">
+          <label class="inline-flex items-center gap-2">
+            <input class="accent-teal-300" type="checkbox" name="shared" value="true" {{checkedAttr .CreateForm.Shared}}>
+            Shared
+          </label>
+          <label class="inline-flex items-center gap-2">
+            <input class="accent-amber-300" type="checkbox" name="archived" value="true" {{checkedAttr .CreateForm.Archived}}>
+            Archived
+          </label>
+        </div>
+        <button class="w-full rounded-full bg-teal-300 px-5 py-3 text-sm font-semibold text-stone-950 transition hover:bg-teal-200">Create note</button>
+      </form>
+    </section>
+
+    <section class="rounded-[1.75rem] border border-stone-800 bg-stone-900/85 p-5 shadow-xl shadow-black/20">
+      <div>
         <h2 class="font-serif text-2xl text-stone-50">Saved queries</h2>
-        <span class="rounded-full bg-fuchsia-300/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-200">Reusable</span>
+        <p class="mt-1 text-sm text-stone-400">Save the current filters so you can reuse them in the UI, API, or MCP.</p>
       </div>
       <form class="mt-5 space-y-4" method="post" action="/app/saved-queries" hx-post="/app/saved-queries" hx-target="#workspace" hx-swap="outerHTML">
         <input type="hidden" name="ui_saved_query_id" value="{{.Filters.SavedQueryID}}">
@@ -1013,9 +1056,9 @@ const uiTemplatesSource = `
     </section>
 
     <section class="rounded-[1.75rem] border border-stone-800 bg-stone-900/85 p-5 shadow-xl shadow-black/20">
-      <div class="flex items-center justify-between">
-        <h2 class="font-serif text-2xl text-stone-50">Browse tags</h2>
-        <span class="rounded-full bg-amber-300/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-amber-200">SQL first</span>
+      <div>
+        <h2 class="font-serif text-2xl text-stone-50">Filters</h2>
+        <p class="mt-1 text-sm text-stone-400">Search, sort, and narrow the note list without leaving the workspace.</p>
       </div>
       <form class="mt-5 space-y-4" method="get" action="/">
         <input type="hidden" name="saved_query_id" value="{{.Filters.SavedQueryID}}">
@@ -1093,49 +1136,6 @@ const uiTemplatesSource = `
           <button class="flex-1 rounded-full bg-amber-300 px-5 py-3 text-sm font-semibold text-stone-950 transition hover:bg-amber-200">Apply filters</button>
           <a href="/" class="rounded-full border border-stone-700 px-5 py-3 text-sm font-semibold text-stone-200 transition hover:border-stone-500 hover:text-stone-50">Reset</a>
         </div>
-      </form>
-    </section>
-
-    <section class="rounded-[1.75rem] border border-stone-800 bg-stone-900/85 p-5 shadow-xl shadow-black/20">
-      <div class="flex items-center justify-between">
-        <h2 class="font-serif text-2xl text-stone-50">New note</h2>
-        <span class="rounded-full bg-teal-400/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-teal-200">HTMX</span>
-      </div>
-      <form class="mt-5 space-y-4" method="post" action="/app/notes" hx-post="/app/notes" hx-target="#workspace" hx-swap="outerHTML">
-        <input type="hidden" name="ui_saved_query_id" value="{{.Filters.SavedQueryID}}">
-        <input type="hidden" name="ui_search" value="{{.Filters.Search}}">
-        <input type="hidden" name="ui_search_mode" value="{{.Filters.SearchMode}}">
-        <input type="hidden" name="ui_has_title" value="{{.Filters.HasTitle}}">
-        <input type="hidden" name="ui_tags" value="{{.Filters.Tags}}">
-        <input type="hidden" name="ui_tag_count_min" value="{{.Filters.TagCountMin}}">
-        <input type="hidden" name="ui_tag_count_max" value="{{.Filters.TagCountMax}}">
-        <input type="hidden" name="ui_tag_mode" value="{{.Filters.Mode}}">
-        <input type="hidden" name="ui_sort" value="{{.Filters.Sort}}">
-        <input type="hidden" name="ui_order" value="{{.Filters.Order}}">
-        <label class="block">
-          <span class="mb-2 block text-sm font-medium text-stone-300">Title</span>
-          <input class="w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-stone-100 outline-none ring-0 transition focus:border-teal-300" type="text" name="title" value="{{.CreateForm.Title}}" placeholder="Sprint review ideas">
-        </label>
-        <label class="block">
-          <span class="mb-2 block text-sm font-medium text-stone-300">Content</span>
-          <textarea class="min-h-[8rem] w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-stone-100 outline-none transition focus:border-teal-300" name="content" placeholder="Write the body of the note here...">{{.CreateForm.Content}}</textarea>
-          {{with index .CreateErrors "content"}}<p class="mt-2 text-sm text-rose-300">{{.}}</p>{{end}}
-        </label>
-        <label class="block">
-          <span class="mb-2 block text-sm font-medium text-stone-300">Tags</span>
-          <input class="w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-stone-100 outline-none transition focus:border-teal-300" type="text" name="tags" value="{{.CreateForm.Tags}}" placeholder="planning, retro, ideas">
-        </label>
-        <div class="flex flex-wrap gap-4 text-sm text-stone-300">
-          <label class="inline-flex items-center gap-2">
-            <input class="accent-teal-300" type="checkbox" name="shared" value="true" {{checkedAttr .CreateForm.Shared}}>
-            Shared
-          </label>
-          <label class="inline-flex items-center gap-2">
-            <input class="accent-amber-300" type="checkbox" name="archived" value="true" {{checkedAttr .CreateForm.Archived}}>
-            Archived
-          </label>
-        </div>
-        <button class="w-full rounded-full bg-teal-300 px-5 py-3 text-sm font-semibold text-stone-950 transition hover:bg-teal-200">Create note</button>
       </form>
     </section>
 

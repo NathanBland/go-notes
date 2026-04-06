@@ -13,6 +13,13 @@ The UI is meant to make local development and teaching easier:
 - save and reapply named filter presets without rebuilding them by hand
 - show how HTMX can add targeted interactivity without replacing server-rendered HTML
 
+The sidebar now follows the intended task priority:
+
+- the note-creation form appears first because creating notes is the primary workspace action
+- saved queries come next because they help reuse browsing context
+- filters follow after that as a secondary narrowing tool
+- section headers use short instructional copy instead of decorative chips
+
 The login action still starts at the shared `GET /api/v1/auth/login` endpoint. The UI adds a safe local redirect target so the shared OIDC callback can send a browser back to `/` after the session cookie has been set.
 
 ## Markdown rendering
@@ -56,9 +63,9 @@ The interface uses a small set of HTMX patterns:
 - the saved-query form also uses `hx-post`, which keeps the filter sidebar and note panel in sync after a preset is created
 - active tag filters are preserved across create, read, and edit flows so the workspace stays in the same browsing context
 
-## Tag browsing
+## Filters
 
-The workspace now includes a small SQL-first tag browsing form:
+The workspace now includes a filter form:
 
 - `search` supports the current search term
 - `search_mode=plain|fts` lets the UI demonstrate the difference between substring matching and PostgreSQL full-text search

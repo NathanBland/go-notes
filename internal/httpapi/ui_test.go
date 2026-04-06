@@ -243,6 +243,55 @@ func TestWorkspaceHelpersAndRedirect(t *testing.T) {
 	}
 }
 
+func TestWorkspaceTemplatePrioritizesCreateSectionAndRemovesDecorativeChips(t *testing.T) {
+	userID := uuid.MustParse("11111111-1111-1111-1111-111111111111")
+	user := auth.User{ID: userID}
+	title := "Tagged note"
+	note := notes.Note{
+		ID:          uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+		OwnerUserID: userID,
+		Title:       &title,
+		Content:     "hello",
+		Tags:        []string{"work"},
+	}
+	api := &API{
+		notesService: notes.NewService(&fakeNotesStore{
+			currentNote: note,
+			listItems:   []notes.Note{note},
+			listTotal:   1,
+			savedItems: []notes.SavedQuery{{
+				ID:          uuid.MustParse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+				OwnerUserID: userID,
+				Name:        "Recent work",
+				Query:       "tags=work",
+			}},
+		}, &fakeCache{values: map[string]string{}}, time.Minute, time.Minute),
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	vm, status := api.workspaceForRequest(req, user, saveQueryFormValues{}, nil, noteFormValues{}, nil, noteFormValues{}, nil)
+	if status != http.StatusOK {
+		t.Fatalf("expected workspace status 200, got %d", status)
+	}
+
+	res := httptest.NewRecorder()
+	api.renderHTML(res, http.StatusOK, "workspace", vm)
+	body := res.Body.String()
+
+	createIndex := strings.Index(body, "New note")
+	savedIndex := strings.Index(body, "Saved queries")
+	filterIndex := strings.Index(body, "Filters")
+	if createIndex == -1 || savedIndex == -1 || filterIndex == -1 {
+		t.Fatalf("expected create, saved query, and filter sections in body=%q", body)
+	}
+	if !(createIndex < savedIndex && savedIndex < filterIndex) {
+		t.Fatalf("expected sidebar order New note -> Saved queries -> Filters, got body=%q", body)
+	}
+	if strings.Contains(body, ">HTMX<") || strings.Contains(body, ">Reusable<") || strings.Contains(body, ">SQL first<") {
+		t.Fatalf("expected decorative chips to be removed, got body=%q", body)
+	}
+}
+
 func TestUIHomeBranchesAndCookieInvalidation(t *testing.T) {
 	userID := uuid.MustParse("11111111-1111-1111-1111-111111111111")
 	api := &API{
