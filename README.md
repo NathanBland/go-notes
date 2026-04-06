@@ -96,6 +96,8 @@ Recent completion:
 ## Docs
 
 - [Roadmap](/Users/nathanbland/projects/codex-workspace/go-notes/ROADMAP.md)
+- [Versioning](/Users/nathanbland/projects/codex-workspace/go-notes/VERSIONING.md)
+- [Changelog](/Users/nathanbland/projects/codex-workspace/go-notes/CHANGELOG.md)
 - [Parity matrix](docs/parity-matrix.md)
 - [Architecture](docs/architecture.md)
 - [API contract](docs/api.md)
@@ -208,6 +210,17 @@ services:
 ```
 
 Use the full production file in [`docker-compose.prod.yml`](/Users/nathanbland/projects/codex-workspace/go-notes/docker-compose.prod.yml) for a complete deployment shape, including healthchecks, persistent volumes, and the `migrate` service. For Portainer or other registry-backed deployments, prefer pinning the API image to a version tag instead of `latest`.
+
+## Versioning and releases
+
+The project now documents its release strategy in [`VERSIONING.md`](/Users/nathanbland/projects/codex-workspace/go-notes/VERSIONING.md) and keeps ongoing release notes in [`CHANGELOG.md`](/Users/nathanbland/projects/codex-workspace/go-notes/CHANGELOG.md).
+
+In short:
+
+- release versions come from Git tags like `v0.1.0`
+- pre-`1.0.0` feature releases advance the minor version
+- bug-fix and operational releases advance the patch version
+- ordinary feature work should usually update `CHANGELOG.md` under `Unreleased` instead of minting a release tag immediately
 
 ## Hot reload with Docker
 

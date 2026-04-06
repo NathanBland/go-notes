@@ -37,6 +37,7 @@ Keep project documentation in sync with the implementation:
 
 - update `README.md` when setup, workflow, security posture, or local development behavior changes
 - update `README.md` and `ROADMAP.md` when roadmap items are completed, re-scoped, added, or otherwise materially changed
+- update `CHANGELOG.md` when feature work changes the user-visible, operator-visible, or teaching-visible surface in a way that should be reflected in `Unreleased`
 - review the relevant files in `docs/` after every feature is completed, and update them in the same change whenever behavior, setup, architecture, auth, testing, or teaching guidance has shifted
 - when the container/runtime shape changes materially, update the dev compose file, the production compose file, and the README compose example together so deployment guidance does not drift
 - create a feature plan in `plans/` for each new feature before substantial implementation begins
@@ -53,8 +54,16 @@ Keep project documentation in sync with the implementation:
   - what is required to build it
   - the implementation plan
   - acceptance criteria that can be used to verify the work is complete
+  - a version-impact assessment, such as `none`, `patch`, `minor`, `major`, or `release-prep`
+  - whether `CHANGELOG.md` should be updated as part of the feature
 - Update the feature plan if the scope materially changes while the work is in progress.
 - Treat the feature plan as part of the feature deliverable, not optional prep work.
+- Unless the task is explicitly about cutting a release, do not invent a new version tag during ordinary feature work. Record the expected impact and update `CHANGELOG.md` instead.
+- When a task does participate in a real version increment, include the concrete release steps in the work:
+  - confirm the next version from the strategy in [`VERSIONING.md`](/Users/nathanbland/projects/codex-workspace/go-notes/VERSIONING.md)
+  - update `CHANGELOG.md` by promoting `Unreleased` entries into the new versioned section
+  - update explicit version surfaces such as [`docs/openapi.yaml`](/Users/nathanbland/projects/codex-workspace/go-notes/docs/openapi.yaml) when they should match the release
+  - verify release tooling assumptions, including GoReleaser config and tag format
 
 ## Architecture rules
 
@@ -145,6 +154,7 @@ Keep project documentation in sync with the implementation:
 - Do not count generated code toward the coverage target.
 - Do not accept changes that reduce meaningful coverage without a strong reason.
 - When a task changes behavior, consider documentation updates part of completion alongside tests and coverage.
+- When a task has non-`none` version impact, consider the `CHANGELOG.md` update part of completion alongside the docs review.
 - A feature is not complete until `docs/` has been reviewed and any impacted documents have been updated.
 - A feature is not complete until the relevant test commands have actually been run, not just reasoned about.
 - Unless the change is docs-only or the user explicitly says otherwise, run `make test`.

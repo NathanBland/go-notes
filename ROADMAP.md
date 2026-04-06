@@ -4,6 +4,10 @@ This file tracks the current roadmap for `go-notes` beyond what is already imple
 
 ## Recently completed
 
+- Define a coherent versioning strategy and changelog workflow
+  - document tag-driven releases and pre-`1.0.0` version rules
+  - add a root changelog with an `Unreleased` section
+  - update `AGENTS.md` so future feature work records version impact and follows the correct release-step expectations
 - Add deployment packaging for general consumption
   - set up a GitHub Actions pipeline to build and publish the root application image
   - set up a GitHub Actions pipeline to build and publish the MCP image and packaged MCP distribution artifacts

@@ -40,6 +40,7 @@ archives:
     formats:
       - tar.gz
     files:
+      - CHANGELOG.md
       - README.md
       - docs/mcp.md
       - docs/mcp-install.md
