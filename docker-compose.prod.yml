@@ -23,8 +23,8 @@ services:
       OIDC_SCOPES: ${OIDC_SCOPES:-openid,profile,email}
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       valkey:
         condition: service_healthy
     ports:
@@ -38,7 +38,6 @@ services:
 
   migrate:
     image: ${GO_NOTES_IMAGE:-ghcr.io/nathanbland/go-notes:latest}
-    profiles: ["ops"]
     restart: "no"
     command: ["migrate", "-path", "/app/migrations", "-database", "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-go_notes}?sslmode=disable", "up"]
     depends_on:

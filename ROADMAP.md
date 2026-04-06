@@ -4,6 +4,10 @@ This file tracks the current roadmap for `go-notes` beyond what is already imple
 
 ## Recently completed
 
+- Add production startup migrations for Compose/Portainer deployments
+  - run the production `migrate` service as part of the default stack startup
+  - gate API startup on successful migration completion so missing tables fail visibly before the app serves traffic
+  - update README, deployment docs, and agent rules so future runtime changes keep migration behavior aligned
 - Refresh the public landing page so it better describes what a user experiences on the running service
   - explain private Markdown notes, tag filtering, saved searches, intentional sharing, OIDC login, and optional API/agent access from the unauthenticated entry point
   - keep app actions pointed at routes the running Go server actually serves

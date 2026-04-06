@@ -188,7 +188,7 @@ For container-based deployment, the project now distinguishes between three arti
 - [`docker-compose.prod.yml`](docker-compose.prod.yml): production-oriented stack using published images
 - [Deployment guide](docs/deployment.md): production compose file, image names, and the full hardening guide
 
-The production stack expects a published API image, an external OIDC provider, and environment-driven secrets. The `migrate` service is included as an explicit operational step instead of running automatically on every container start.
+The production stack expects a published API image, an external OIDC provider, and environment-driven secrets. The `migrate` service runs as a one-shot startup gate, and the API waits for it to complete successfully before starting.
 
 Example production compose usage:
 
@@ -208,13 +208,19 @@ services:
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
       OIDC_REDIRECT_URL: https://notes.example.com/api/v1/auth/callback
       SESSION_COOKIE_SECURE: "true"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
   postgres:
     image: postgres:16-alpine
   valkey:
     image: valkey/valkey:8-alpine
+  migrate:
+    image: ghcr.io/nathanbland/go-notes:v0.1.0
+    command: ["migrate", "-path", "/app/migrations", "-database", "postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/go_notes?sslmode=disable", "up"]
 ```
 
-Use the full production file in [`docker-compose.prod.yml`](docker-compose.prod.yml) for a complete deployment shape, including healthchecks, persistent volumes, and the `migrate` service. For Portainer or other registry-backed deployments, prefer pinning the API image to a version tag instead of `latest`. The [Deployment guide](docs/deployment.md) is the fastest place to start.
+Use the full production file in [`docker-compose.prod.yml`](docker-compose.prod.yml) for a complete deployment shape, including healthchecks, persistent volumes, and the migration startup gate. For Portainer or other registry-backed deployments, prefer pinning the API image to a version tag instead of `latest`. The [Deployment guide](docs/deployment.md) is the fastest place to start.
 
 ## Versioning and releases
 

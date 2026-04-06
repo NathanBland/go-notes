@@ -35,7 +35,7 @@ The production stack is optimized for deployment:
 - durable named volumes for PostgreSQL and Valkey
 - `restart: unless-stopped`
 - healthchecks for service orchestration
-- a separate `migrate` service under the `ops` profile
+- a one-shot `migrate` service that runs before the API starts
 
 Validate it with:
 
@@ -45,17 +45,13 @@ make docker-config-prod
 
 That target validates [`docker-compose.prod.yml`](../docker-compose.prod.yml) against [`.env.production.example`](../.env.production.example) by default so local checks do not depend on exporting secrets first.
 
-Run migrations explicitly before or during a rollout:
-
-```bash
-docker compose --env-file .env.production -f docker-compose.prod.yml --profile ops run --rm migrate
-```
-
 Start the long-running services:
 
 ```bash
-docker compose --env-file .env.production -f docker-compose.prod.yml up -d api postgres valkey
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d
 ```
+
+The default production startup includes the `migrate` service. The API service waits for that one-shot migration container to complete successfully before it starts. If a migration fails, the API should remain stopped so the deployment fails visibly instead of booting against an incomplete schema.
 
 ## Portainer notes
 
@@ -63,7 +59,8 @@ For Portainer-style usage:
 
 - point the stack at [`docker-compose.prod.yml`](../docker-compose.prod.yml)
 - provide the required environment variables through Portainer or an env file
-- run the `migrate` service intentionally as an operational step before promoting the API service
+- let the default stack start include the `migrate` service; the API is gated on successful migration completion
+- after changing image tags or environment values, redeploy the stack rather than starting only the API container, so the migration gate runs for that rollout
 
 ## Production hardening
 

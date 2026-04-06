@@ -6,6 +6,12 @@ The project uses an `Unreleased` section during feature work and promotes those 
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-04-06
+
+### Changed
+
+- Production Compose deployments now run the migration service as a default startup gate, and the API waits for migrations to complete successfully before starting.
+
 ## [0.1.1] - 2026-04-06
 
 ### Changed

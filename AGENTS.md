@@ -40,6 +40,7 @@ Keep project documentation in sync with the implementation:
 - update `CHANGELOG.md` when feature work changes the user-visible, operator-visible, or teaching-visible surface in a way that should be reflected in `Unreleased`
 - review the relevant files in `docs/` after every feature is completed, and update them in the same change whenever behavior, setup, architecture, auth, testing, or teaching guidance has shifted
 - when the container/runtime shape changes materially, update the dev compose file, the production compose file, and the README compose example together so deployment guidance does not drift
+- production container changes must preserve or deliberately update the migration startup gate; the production API should not start against PostgreSQL until migrations have completed successfully
 - create a feature plan in `plans/` for each new feature before substantial implementation begins
 - update the relevant files under `docs/` when API behavior, architecture, auth flow, filtering, pagination, or testing expectations change
 - update teaching comments in code when the implementation changes how nullable fields, UTC timestamps, cache behavior, auth flow, or SQL mapping work

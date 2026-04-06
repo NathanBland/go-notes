@@ -178,7 +178,7 @@ docker-build-app: check-docker-daemon
 docker-build-mcp: check-docker-daemon
 	docker build -f Dockerfile.mcp -t go-notes-mcp:local .
 
-docker-config-prod: check-docker-daemon
+docker-config-prod:
 	@test -n "$(DOCKER_COMPOSE)" || (printf 'Docker Compose is required.\n' >&2; exit 1)
 	$(DOCKER_COMPOSE) --env-file $(PROD_ENV_FILE) -f docker-compose.prod.yml config -q
 
