@@ -60,10 +60,18 @@ Keep project documentation in sync with the implementation:
 - Treat the feature plan as part of the feature deliverable, not optional prep work.
 - Unless the task is explicitly about cutting a release, do not invent a new version tag during ordinary feature work. Record the expected impact and update `CHANGELOG.md` instead.
 - When a task does participate in a real version increment, include the concrete release steps in the work:
-  - confirm the next version from the strategy in [`VERSIONING.md`](/Users/nathanbland/projects/codex-workspace/go-notes/VERSIONING.md)
+  - confirm the next version from the strategy in [`VERSIONING.md`](VERSIONING.md)
   - update `CHANGELOG.md` by promoting `Unreleased` entries into the new versioned section
-  - update explicit version surfaces such as [`docs/openapi.yaml`](/Users/nathanbland/projects/codex-workspace/go-notes/docs/openapi.yaml) when they should match the release
+  - update explicit version surfaces such as [`docs/openapi.yaml`](docs/openapi.yaml) when they should match the release
   - verify release tooling assumptions, including GoReleaser config and tag format
+
+## Repository docs link rule
+
+- Markdown links written inside repository files must use repo-relative paths that resolve from the file that contains the link, not absolute filesystem paths from the local machine.
+- Keep canonical documentation in its natural home, usually under `docs/`, instead of adding wrapper markdown files at the repository root just to work around a broken link.
+- Prefer linking directly to the real target document instead of adding duplicate entry-point docs unless there is a clear discoverability reason.
+- When moving or renaming docs, update every inbound markdown link in the same change.
+- Before finishing docs work, run a quick markdown-link sanity check so internal repo links resolve both on GitHub and from a fresh clone.
 
 ## Architecture rules
 

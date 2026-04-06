@@ -1,6 +1,6 @@
 # go-notes Plan Snapshot
 
-This document is now a concise snapshot of the implemented baseline rather than the active roadmap. For current next-step planning, use [ROADMAP.md](/Users/nathanbland/projects/codex-workspace/go-notes/ROADMAP.md) and the feature plans under `plans/`.
+This document is now a concise snapshot of the implemented baseline rather than the active roadmap. For current next-step planning, use [ROADMAP.md](../ROADMAP.md) and the feature plans under `plans/`.
 
 ## Current baseline
 
@@ -67,10 +67,10 @@ Defaults:
 
 ## Where to look next
 
-- [README.md](/Users/nathanbland/projects/codex-workspace/go-notes/README.md) for the current developer workflow
-- [docs/architecture.md](/Users/nathanbland/projects/codex-workspace/go-notes/docs/architecture.md) for the current shape of the codebase
-- [docs/testing.md](/Users/nathanbland/projects/codex-workspace/go-notes/docs/testing.md) for the current test and coverage workflow
-- [ROADMAP.md](/Users/nathanbland/projects/codex-workspace/go-notes/ROADMAP.md) for upcoming work
+- [README.md](../README.md) for the current developer workflow
+- [docs/architecture.md](architecture.md) for the current shape of the codebase
+- [docs/testing.md](testing.md) for the current test and coverage workflow
+- [ROADMAP.md](../ROADMAP.md) for upcoming work
 
 - handler tests with `httptest`
 - table-driven tests for success and failure cases

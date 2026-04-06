@@ -67,7 +67,7 @@ make run-mcp
 
 The MCP server runs over stdio, so it is meant to be launched by an MCP-capable client rather than visited in a browser.
 
-For packaged binary installation and client setup examples, see [MCP Install](/Users/nathanbland/projects/codex-workspace/go-notes/docs/mcp-install.md).
+For packaged binary installation and client setup examples, see [MCP Install](mcp-install.md).
 
 ## Tool behavior
 

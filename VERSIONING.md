@@ -39,7 +39,7 @@ Move to normal SemVer:
 
 ## Changelog workflow
 
-The repository keeps a root [`CHANGELOG.md`](/Users/nathanbland/projects/codex-workspace/go-notes/CHANGELOG.md).
+The repository keeps a root [`CHANGELOG.md`](CHANGELOG.md).
 
 Feature work should update the `Unreleased` section when the change is user-visible, operator-visible, or meaningfully changes the teaching surface.
 
@@ -55,7 +55,7 @@ When preparing a release:
 
 1. Decide the next version from the accumulated `Unreleased` changes.
 2. Move the `Unreleased` entries into a new versioned section.
-3. Update any explicit in-repo version surfaces, such as [`docs/openapi.yaml`](/Users/nathanbland/projects/codex-workspace/go-notes/docs/openapi.yaml), if they should reflect the new public release.
+3. Update any explicit in-repo version surfaces, such as [`docs/openapi.yaml`](docs/openapi.yaml), if they should reflect the new public release.
 4. Create the Git tag in `vMAJOR.MINOR.PATCH` form.
 5. Let GoReleaser build artifacts and release notes from that tag.
 

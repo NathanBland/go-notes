@@ -6,13 +6,15 @@ The project uses an `Unreleased` section during feature work and promotes those 
 
 ## [Unreleased]
 
-- No unreleased changes yet.
+### Changed
+
+- Deployment documentation links now point directly to the canonical guide in [`docs/deployment.md`](docs/deployment.md), so they work cleanly on GitHub and in local clones.
 
 ## [0.1.0] - 2026-04-06
 
 ### Added
 
-- Versioning and changelog guidance now live in [`VERSIONING.md`](/Users/nathanbland/projects/codex-workspace/go-notes/VERSIONING.md).
+- Versioning and changelog guidance now live in [`VERSIONING.md`](VERSIONING.md).
 - A production deployment path now exists with published-image workflows, production Dockerfiles, and a Portainer-friendly compose file.
 - Initial public baseline for the REST API, server-rendered UI, PostgreSQL persistence, Valkey caching, OIDC login flow, and stdio MCP support is now tracked here pending the first tagged release.
 - Owner-scoped tag rename is now available through REST, the server-rendered UI, and MCP with shared PostgreSQL-backed rewrite rules.

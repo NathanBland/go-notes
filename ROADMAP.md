@@ -4,6 +4,9 @@ This file tracks the current roadmap for `go-notes` beyond what is already imple
 
 ## Recently completed
 
+- Improve deployment-guide discoverability from the repository root
+  - add a top-level deployment entry point instead of relying only on a nested `docs/` path
+  - update README deployment links so readers can find the guide immediately
 - Define a coherent versioning strategy and changelog workflow
   - document tag-driven releases and pre-`1.0.0` version rules
   - add a root changelog with an `Unreleased` section

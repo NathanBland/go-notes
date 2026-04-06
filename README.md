@@ -69,9 +69,9 @@ What is available today:
 - Production-ready API and MCP Dockerfiles plus a production-oriented compose stack for registry-backed deployment
 - A first local MCP interface over stdio with note, tag, saved-query, and related-note discovery tools, including `find_related_notes`
 - A minimal server-rendered web interface with HTMX and Tailwind CSS for login, note reading, note creation, and note updates
-- Unit tests, integration tests, coverage tooling, and project rules captured in [AGENTS.md](/Users/nathanbland/projects/codex-workspace/go-notes/AGENTS.md)
+- Unit tests, integration tests, coverage tooling, and project rules captured in [AGENTS.md](AGENTS.md)
 
-The current roadmap lives in [ROADMAP.md](/Users/nathanbland/projects/codex-workspace/go-notes/ROADMAP.md), including near-term API work, testing goals, the new MCP/LLM direction, and follow-up work around coverage and richer tag-aware behavior.
+The current roadmap lives in [ROADMAP.md](ROADMAP.md), including near-term API work, testing goals, the new MCP/LLM direction, and follow-up work around coverage and richer tag-aware behavior.
 That roadmap now also includes a minimal HTMX + Tailwind CSS web interface for local login and note interactions, while keeping the REST API as the primary teaching surface.
 
 OIDC provider connectivity stays env-driven. The project is intended to connect to an external provider through configured environment variables rather than running an OIDC provider inside this repository's Docker Compose stack.
@@ -100,9 +100,9 @@ Recent completion:
 
 ## Docs
 
-- [Roadmap](/Users/nathanbland/projects/codex-workspace/go-notes/ROADMAP.md)
-- [Versioning](/Users/nathanbland/projects/codex-workspace/go-notes/VERSIONING.md)
-- [Changelog](/Users/nathanbland/projects/codex-workspace/go-notes/CHANGELOG.md)
+- [Roadmap](ROADMAP.md)
+- [Versioning](VERSIONING.md)
+- [Changelog](CHANGELOG.md)
 - [Parity matrix](docs/parity-matrix.md)
 - [Architecture](docs/architecture.md)
 - [API contract](docs/api.md)
@@ -184,9 +184,9 @@ make run-mcp
 
 For container-based deployment, the project now distinguishes between three artifacts:
 
-- [`docker-compose.yml`](/Users/nathanbland/projects/codex-workspace/go-notes/docker-compose.yml): development stack with bind mounts and hot reload
-- [`docker-compose.prod.yml`](/Users/nathanbland/projects/codex-workspace/go-notes/docker-compose.prod.yml): production-oriented stack using published images
-- [Deployment guide](/Users/nathanbland/projects/codex-workspace/go-notes/docs/deployment.md): explains how the development stack, production stack, README example, and production hardening expectations fit together
+- [`docker-compose.yml`](docker-compose.yml): development stack with bind mounts and hot reload
+- [`docker-compose.prod.yml`](docker-compose.prod.yml): production-oriented stack using published images
+- [Deployment guide](docs/deployment.md): production compose file, image names, and the full hardening guide
 
 The production stack expects a published API image, an external OIDC provider, and environment-driven secrets. The `migrate` service is included as an explicit operational step instead of running automatically on every container start.
 
@@ -214,11 +214,11 @@ services:
     image: valkey/valkey:8-alpine
 ```
 
-Use the full production file in [`docker-compose.prod.yml`](/Users/nathanbland/projects/codex-workspace/go-notes/docker-compose.prod.yml) for a complete deployment shape, including healthchecks, persistent volumes, and the `migrate` service. For Portainer or other registry-backed deployments, prefer pinning the API image to a version tag instead of `latest`.
+Use the full production file in [`docker-compose.prod.yml`](docker-compose.prod.yml) for a complete deployment shape, including healthchecks, persistent volumes, and the `migrate` service. For Portainer or other registry-backed deployments, prefer pinning the API image to a version tag instead of `latest`. The [Deployment guide](docs/deployment.md) is the fastest place to start.
 
 ## Versioning and releases
 
-The project now documents its release strategy in [`VERSIONING.md`](/Users/nathanbland/projects/codex-workspace/go-notes/VERSIONING.md) and keeps ongoing release notes in [`CHANGELOG.md`](/Users/nathanbland/projects/codex-workspace/go-notes/CHANGELOG.md).
+The project now documents its release strategy in [`VERSIONING.md`](VERSIONING.md) and keeps ongoing release notes in [`CHANGELOG.md`](CHANGELOG.md).
 
 In short:
 
@@ -243,9 +243,9 @@ Then hit [http://localhost:8080/api/v1/healthz](http://localhost:8080/api/v1/hea
 
 Key files:
 
-- [`.air.toml`](/Users/nathanbland/projects/codex-workspace/go-notes/.air.toml)
-- [`Dockerfile.dev`](/Users/nathanbland/projects/codex-workspace/go-notes/Dockerfile.dev)
-- [`docker-compose.yml`](/Users/nathanbland/projects/codex-workspace/go-notes/docker-compose.yml)
+- [`.air.toml`](.air.toml)
+- [`Dockerfile.dev`](Dockerfile.dev)
+- [`docker-compose.yml`](docker-compose.yml)
 
 ## MCP
 
@@ -282,7 +282,7 @@ This first MCP slice is local-only and currently uses `MCP_OWNER_USER_ID` to sco
 
 For local development, both `make run` and `make run-mcp` automatically source `.env` first and then `.env.local`, so `.env.local` can safely override machine-specific values.
 
-If you want a packaged binary instead of `go run`, the project now also includes GoReleaser scaffolding for `go-notes-mcp`. See [MCP install](/Users/nathanbland/projects/codex-workspace/go-notes/docs/mcp-install.md) for snapshot builds and client setup examples for Codex, Claude Code, Cursor, and Windsurf.
+If you want a packaged binary instead of `go run`, the project now also includes GoReleaser scaffolding for `go-notes-mcp`. See [MCP install](docs/mcp-install.md) for snapshot builds and client setup examples for Codex, Claude Code, Cursor, and Windsurf.
 
 ## Web UI
 
@@ -305,7 +305,7 @@ The JSON API is still the primary teaching surface. The HTML UI exists to make l
 ## API guardrails
 
 - Keep handlers focused on HTTP concerns like decoding, validation, auth, and response formatting.
-- Use the repository layer in [`internal/platform/db`](/Users/nathanbland/projects/codex-workspace/go-notes/internal/platform/db) to translate validated route inputs into typed `sqlc` parameters.
+- Use the repository layer in [`internal/platform/db`](internal/platform/db) to translate validated route inputs into typed `sqlc` parameters.
 - Let PostgreSQL do the heavy lifting for filtering, sorting, pagination, and counting so the API stays consistent and efficient under load.
 - Never build SQL by concatenating raw user input. All user-controlled values should stay in bound parameters through `sqlc.arg(...)` or `sqlc.narg(...)`.
 - Treat sort fields and directions as strict allowlists. `ORDER BY` is one of the easiest places to accidentally re-introduce SQL injection if raw strings leak through.
@@ -333,7 +333,7 @@ The JSON API is still the primary teaching surface. The HTML UI exists to make l
 - MCP is also separate from local Compose. It runs as a stdio process and currently requires `MCP_OWNER_USER_ID` for local owner scoping.
 - The handwritten-code coverage gate excludes generated `sqlc` output and the thin `cmd/api` / `cmd/mcp` entrypoints so it focuses on the project’s actual teaching logic.
 - The web UI lives in the same Go server as the API and reuses the same auth and notes services rather than calling the API over HTTP from a second frontend app.
-- [AGENTS.md](/Users/nathanbland/projects/codex-workspace/go-notes/AGENTS.md) captures the project’s standing rules for architecture, docs usage, testing, and coverage.
+- [AGENTS.md](AGENTS.md) captures the project’s standing rules for architecture, docs usage, testing, and coverage.
 - Timestamps are stored as PostgreSQL `timestamptz` values and always normalized to UTC.
 - Nullable SQL columns intentionally become Go pointers so the code can show the difference between `null`, an omitted value, and a zero value.
 - PATCH semantics use pointer fields plus explicit `Set` flags because Go needs a little more help than JavaScript when you need to tell “field missing” from “field intentionally set”.
