@@ -6,6 +6,8 @@ The project uses an `Unreleased` section during feature work and promotes those 
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-04-06
+
 ### Changed
 
 - Deployment documentation links now point directly to the canonical guide in [`docs/deployment.md`](docs/deployment.md), so they work cleanly on GitHub and in local clones.
