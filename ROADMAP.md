@@ -4,6 +4,13 @@ This file tracks the current roadmap for `go-notes` beyond what is already imple
 
 ## Recently completed
 
+- Add deployment packaging for general consumption
+  - set up a GitHub Actions pipeline to build and publish the root application image
+  - set up a GitHub Actions pipeline to build and publish the MCP image and packaged MCP distribution artifacts
+  - add a production-oriented `docker-compose.prod.yml` file suitable for environments like Portainer
+  - add and maintain a README production compose example that matches the supported container layout
+  - document how the dev compose stack, production compose stack, and README example relate to each other so contributors know which one to update
+
 - Add request-throttling middleware for login, callback, and public shared-note routes
 - Expand integration coverage around note CRUD, filtering, pagination, and cache invalidation
 - Keep OIDC configuration env-driven and well-documented so the app can connect cleanly to an external provider without bundling one into local Docker Compose
@@ -56,9 +63,13 @@ This file tracks the current roadmap for `go-notes` beyond what is already imple
   - `find_related_notes` based on overlapping tags, ranked in PostgreSQL with deterministic tie-breaks
   - return the related note plus the shared tags and overlap count so agent output stays explainable
   - verify owner scoping so other users' notes never participate in the ranking
+- Run a focused UI consistency audit for the server-rendered workspace
+  - move note creation to the top of the sidebar because it is the primary action
+  - remove decorative section chips that do not add teaching value
+  - keep the HTMX behavior but simplify hierarchy, wording, and section consistency
+  - add tests that lock in the sidebar order and the removal of low-value labels
 
 ## Near-term roadmap
-
 - Continue higher-level MCP discovery and organization helpers where they stay teachable
   - `rename_tag` for owner-scoped bulk tag cleanup
   - `suggest_tags_for_note` if the implementation remains simple and explainable

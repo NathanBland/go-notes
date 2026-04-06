@@ -60,6 +60,9 @@ For MCP packaging work:
 ```bash
 make release-check-mcp
 make release-snapshot-mcp
+make docker-build-app
+make docker-build-mcp
+make docker-config-prod
 ```
 
 Current status:

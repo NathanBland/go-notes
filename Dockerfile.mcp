@@ -1,0 +1,23 @@
+FROM golang:1.25-alpine AS builder
+WORKDIR /src
+
+RUN apk add --no-cache ca-certificates git
+
+ARG TARGETOS=linux
+ARG TARGETARCH=amd64
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags='-s -w' -o /out/go-notes-mcp ./cmd/mcp
+
+FROM alpine:3.22
+WORKDIR /app
+
+RUN apk add --no-cache ca-certificates tzdata
+
+COPY --from=builder /out/go-notes-mcp /usr/local/bin/go-notes-mcp
+
+ENTRYPOINT ["go-notes-mcp"]
+CMD []

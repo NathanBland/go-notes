@@ -7,7 +7,9 @@ coverage.html
 
 # Local env
 .env
+.env.production
 .env.local
+.env.production.local
 .env.*.local
 
 # Generated / vendor

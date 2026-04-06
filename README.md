@@ -36,7 +36,7 @@ What is available today:
 - Valkey-backed session storage, pending OIDC state storage, note cache, shared-note cache, and list cache
 - Request throttling on login, callback, and public shared-note routes
 - Expanded Docker-backed integration coverage for note CRUD, filtering, pagination, and observable cache behavior
-- Coverage tooling and an `80%` handwritten-code target enforced through `make coverage-check-integration`, currently passing at `85.3%`
+- Coverage tooling and an `80%` handwritten-code target enforced through `make coverage-check-integration`, currently passing above `85%`
 - GoReleaser-based packaging for installable `go-notes-mcp` binaries on macOS and Linux, including checksums and snapshot build support
 - Server-side filtering, sorting, and pagination:
   - `page`
@@ -63,6 +63,7 @@ What is available today:
 - Owner-scoped saved queries can store canonical list filters in PostgreSQL and be reused from REST, the web UI, and MCP with `saved_query_id`
 - Public shared-note responses that intentionally omit internal note IDs and owner IDs so a share link does not leak private identifiers
 - Docker-based local development for PostgreSQL, Valkey, migrations, and the hot-reloading API
+- Production-ready API and MCP Dockerfiles plus a production-oriented compose stack for registry-backed deployment
 - A first local MCP interface over stdio with note, tag, saved-query, and related-note discovery tools, including `find_related_notes`
 - A minimal server-rendered web interface with HTMX and Tailwind CSS for login, note reading, note creation, and note updates
 - Unit tests, integration tests, coverage tooling, and project rules captured in [AGENTS.md](/Users/nathanbland/projects/codex-workspace/go-notes/AGENTS.md)
@@ -86,9 +87,11 @@ Recent completion:
 - advanced note filtering now also includes explicit `has_title` and tag-count range filters, while full-text search stays opt-in through `search_mode=fts`
 - saved queries now store normalized owner-scoped list presets and replay them through the same validation path before explicit request values override them
 - MCP now includes `find_related_notes`, which ranks owner-scoped related notes by overlapping tags in PostgreSQL and returns the shared tags that explain each match
+- the web UI sidebar now leads with note creation and uses simpler instructional section copy instead of decorative labels
 - the integration-backed handwritten-code coverage gate is green again after the recent UI, tag, and MCP additions
 - the security audit pass now includes regression coverage for cross-owner note access and a hardened shared-note response shape
 - the MCP server now has validated GoReleaser packaging plus install docs for Codex, Claude Code, Cursor, and Windsurf
+- the repository now includes production Dockerfiles, a Portainer-friendly production compose file, and GitHub Actions workflows for the API image and MCP delivery pipeline
 
 ## Docs
 
@@ -100,6 +103,7 @@ Recent completion:
 - [Filtering and pagination](docs/filtering-pagination.md)
 - [MCP](docs/mcp.md)
 - [MCP install](docs/mcp-install.md)
+- [Deployment](docs/deployment.md)
 - [Web UI](docs/web-ui.md)
 - [OIDC and Keycloak](docs/oidc-keycloak.md)
 - [Testing](docs/testing.md)
@@ -168,6 +172,42 @@ make release-snapshot-mcp
 make run
 make run-mcp
 ```
+
+## Container deployment
+
+For container-based deployment, the project now distinguishes between three artifacts:
+
+- [`docker-compose.yml`](/Users/nathanbland/projects/codex-workspace/go-notes/docker-compose.yml): development stack with bind mounts and hot reload
+- [`docker-compose.prod.yml`](/Users/nathanbland/projects/codex-workspace/go-notes/docker-compose.prod.yml): production-oriented stack using published images
+- [Deployment guide](/Users/nathanbland/projects/codex-workspace/go-notes/docs/deployment.md): explains how the development stack, production stack, and README example fit together
+
+The production stack expects a published API image, an external OIDC provider, and environment-driven secrets. The `migrate` service is included as an explicit operational step instead of running automatically on every container start.
+
+Example production compose usage:
+
+```yaml
+services:
+  api:
+    image: ghcr.io/nathanbland/go-notes:v0.1.0
+    ports:
+      - "8080:8080"
+    environment:
+      APP_ENV: production
+      BASE_URL: https://notes.example.com
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/go_notes?sslmode=disable
+      VALKEY_ADDR: valkey:6379
+      OIDC_ISSUER_URL: https://cloak.example.com/realms/lab
+      OIDC_CLIENT_ID: go-notes
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
+      OIDC_REDIRECT_URL: https://notes.example.com/api/v1/auth/callback
+      SESSION_COOKIE_SECURE: "true"
+  postgres:
+    image: postgres:16-alpine
+  valkey:
+    image: valkey/valkey:8-alpine
+```
+
+Use the full production file in [`docker-compose.prod.yml`](/Users/nathanbland/projects/codex-workspace/go-notes/docker-compose.prod.yml) for a complete deployment shape, including healthchecks, persistent volumes, and the `migrate` service. For Portainer or other registry-backed deployments, prefer pinning the API image to a version tag instead of `latest`.
 
 ## Hot reload with Docker
 

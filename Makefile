@@ -6,6 +6,7 @@ GORELEASER_PKG := github.com/goreleaser/goreleaser/v2@latest
 DOCKER_COMPOSE ?= $(shell if docker compose version >/dev/null 2>&1; then printf 'docker compose'; elif command -v docker-compose >/dev/null 2>&1; then printf 'docker-compose'; fi)
 COMPOSE_FILE ?= docker-compose.yml
 COMPOSE_PROJECT_NAME ?= go-notes
+PROD_ENV_FILE ?= .env.production.example
 
 POSTGRES_USER ?= postgres
 POSTGRES_PASSWORD ?= postgres
@@ -32,8 +33,9 @@ LOAD_LOCAL_ENV = set -a; [ ! -f ./.env ] || . ./.env; [ ! -f ./.env.local ] || .
 
 .PHONY: help init check-deps deps install-go install-sqlc check-docker-tools check-docker-daemon \
 	go-mod-tidy sqlc-generate docker-up docker-up-app docker-down docker-logs docker-logs-api \
-	migrate-create migrate-up migrate-down fmt test test-integration coverage coverage-integration \
-	coverage-check coverage-check-integration release-check-mcp release-snapshot-mcp run run-mcp
+	docker-build-app docker-build-mcp docker-config-prod migrate-create migrate-up migrate-down fmt \
+	test test-integration coverage coverage-integration coverage-check coverage-check-integration \
+	release-check-mcp release-snapshot-mcp run run-mcp
 
 help:
 	@printf '%s\n' \
@@ -45,6 +47,9 @@ help:
 		'  make docker-down     Stop Docker services and remove containers' \
 		'  make docker-logs     Follow PostgreSQL and Valkey logs' \
 		'  make docker-logs-api Follow API logs from the hot-reload container' \
+		'  make docker-build-app Build the production API image locally' \
+		'  make docker-build-mcp Build the production MCP image locally' \
+		'  make docker-config-prod Validate the production compose file' \
 		'  make go-mod-tidy     Resolve and tidy Go dependencies' \
 		'  make sqlc-generate   Generate typed Go code from SQL files' \
 		'  make migrate-create NAME=create_users  Create a numbered SQL migration pair' \
@@ -166,6 +171,16 @@ docker-logs: check-docker-daemon
 docker-logs-api: check-docker-daemon
 	@test -n "$(DOCKER_COMPOSE)" || (printf 'Docker Compose is required.\n' >&2; exit 1)
 	$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) -p $(COMPOSE_PROJECT_NAME) logs -f api
+
+docker-build-app: check-docker-daemon
+	docker build -f Dockerfile -t go-notes:local .
+
+docker-build-mcp: check-docker-daemon
+	docker build -f Dockerfile.mcp -t go-notes-mcp:local .
+
+docker-config-prod: check-docker-daemon
+	@test -n "$(DOCKER_COMPOSE)" || (printf 'Docker Compose is required.\n' >&2; exit 1)
+	$(DOCKER_COMPOSE) --env-file $(PROD_ENV_FILE) -f docker-compose.prod.yml config -q
 
 migrate-create:
 	@test -n "$(NAME)" || (printf 'Usage: make migrate-create NAME=create_users\n' >&2; exit 1)

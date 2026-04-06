@@ -38,6 +38,7 @@ Keep project documentation in sync with the implementation:
 - update `README.md` when setup, workflow, security posture, or local development behavior changes
 - update `README.md` and `ROADMAP.md` when roadmap items are completed, re-scoped, added, or otherwise materially changed
 - review the relevant files in `docs/` after every feature is completed, and update them in the same change whenever behavior, setup, architecture, auth, testing, or teaching guidance has shifted
+- when the container/runtime shape changes materially, update the dev compose file, the production compose file, and the README compose example together so deployment guidance does not drift
 - create a feature plan in `plans/` for each new feature before substantial implementation begins
 - update the relevant files under `docs/` when API behavior, architecture, auth flow, filtering, pagination, or testing expectations change
 - update teaching comments in code when the implementation changes how nullable fields, UTC timestamps, cache behavior, auth flow, or SQL mapping work

@@ -13,6 +13,10 @@
 - `internal/platform/cache`: Valkey client wrapper
 - `internal/platform/oidc`: provider discovery, PKCE, token verification
 - `docker-compose.yml`: local PostgreSQL, Valkey, migration helper container, and hot-reloading API
+- `docker-compose.prod.yml`: production-oriented compose stack for registry-backed deployments
+- `Dockerfile`: production API image with the app binary plus bundled migrations and migrate CLI
+- `Dockerfile.mcp`: production MCP runtime image
+- `.github/workflows/`: CI pipelines for API image publication and MCP release delivery
 - `.air.toml`: file-watch rules for rebuild and restart during development
 
 ## Flow

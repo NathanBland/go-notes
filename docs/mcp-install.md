@@ -1,6 +1,7 @@
 # MCP Install
 
 This guide covers the packaged `go-notes-mcp` binary for local stdio MCP clients.
+The project also now publishes a container-friendly MCP runtime image for environments that prefer `docker run` style command execution.
 
 ## What gets distributed
 
@@ -76,6 +77,27 @@ env:
   VALKEY_ADDR=127.0.0.1:6379
   MCP_OWNER_USER_ID=<user-uuid>
 ```
+
+## Container image launch pattern
+
+The published MCP image is most useful when a client can run a Docker command as its stdio transport.
+
+Example:
+
+```text
+command=docker
+args=[
+  "run",
+  "--rm",
+  "-i",
+  "-e", "DATABASE_URL=postgres://postgres:postgres@host.docker.internal:5432/go_notes?sslmode=disable",
+  "-e", "VALKEY_ADDR=host.docker.internal:6379",
+  "-e", "MCP_OWNER_USER_ID=<user-uuid>",
+  "ghcr.io/nathanbland/go-notes-mcp:latest"
+]
+```
+
+For Linux hosts, replace `host.docker.internal` with the hostname or bridge IP that reaches your PostgreSQL and Valkey services.
 
 ## Codex
 
