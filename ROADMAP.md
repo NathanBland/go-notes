@@ -4,6 +4,13 @@ This file tracks the current roadmap for `go-notes` beyond what is already imple
 
 ## Recently completed
 
+- Add public shared-note UI pages that work without sign-in
+  - provide `/shared/{slug}` for intentionally shared notes only
+  - keep private notes and owner-scoped workspace routes behind authentication
+  - reuse the existing shared-note service/query path so the UI has the same authorization boundary as `GET /api/v1/notes/shared/{slug}`
+  - render Markdown safely and avoid exposing internal note IDs or owner IDs in the public page
+  - add tests for shared, unshared, missing, and malformed slug cases
+  - update API/UI/docs examples so users can understand how to create and open a shareable link
 - Add production startup migrations for Compose/Portainer deployments
   - run the production `migrate` service as part of the default stack startup
   - gate API startup on successful migration completion so missing tables fail visibly before the app serves traffic

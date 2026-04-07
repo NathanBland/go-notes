@@ -845,6 +845,61 @@ func TestSharedNoteEndpoint(t *testing.T) {
 	}
 }
 
+func TestPublicSharedNotePage(t *testing.T) {
+	userID := uuid.MustParse("11111111-1111-1111-1111-111111111111")
+	noteID := uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+	slug := "public-note"
+	title := "Shared title"
+	handler := newTestHandlerWithDeps(Dependencies{
+		NotesService: notes.NewService(&fakeNotesStore{sharedNote: notes.Note{
+			ID:          noteID,
+			OwnerUserID: userID,
+			Title:       &title,
+			Content:     "# Public note\n\nThis is **shared**.",
+			Tags:        []string{"share", "docs"},
+			Shared:      true,
+			ShareSlug:   &slug,
+			CreatedAt:   time.Date(2026, time.April, 5, 6, 0, 0, 0, time.UTC),
+			UpdatedAt:   time.Date(2026, time.April, 5, 7, 0, 0, 0, time.UTC),
+		}}, &fakeCache{values: map[string]string{}}, time.Minute, time.Minute),
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/shared/"+slug, nil)
+	res := httptest.NewRecorder()
+	handler.ServeHTTP(res, req)
+
+	if res.Code != http.StatusOK {
+		t.Fatalf("expected 200 for public shared page, got %d body=%q", res.Code, res.Body.String())
+	}
+	body := res.Body.String()
+	if !strings.Contains(body, "Shared title") || !strings.Contains(body, "<strong>shared</strong>") || !strings.Contains(body, "This note was intentionally shared by its owner.") {
+		t.Fatalf("expected rendered shared note body, got %q", body)
+	}
+	if strings.Contains(body, noteID.String()) || strings.Contains(body, userID.String()) {
+		t.Fatalf("expected public shared page to omit internal identifiers, got %q", body)
+	}
+}
+
+func TestPublicSharedNotePageErrors(t *testing.T) {
+	handler := newTestHandlerWithDeps(Dependencies{
+		NotesService: notes.NewService(&fakeNotesStore{sharedErr: notes.ErrNotFound}, &fakeCache{values: map[string]string{}}, time.Minute, time.Minute),
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/shared/missing", nil)
+	res := httptest.NewRecorder()
+	handler.ServeHTTP(res, req)
+	if res.Code != http.StatusNotFound || !strings.Contains(res.Body.String(), "Shared note not found.") {
+		t.Fatalf("expected public missing shared note page, got status=%d body=%q", res.Code, res.Body.String())
+	}
+
+	req = httptest.NewRequest(http.MethodGet, "/shared/bad!", nil)
+	res = httptest.NewRecorder()
+	handler.ServeHTTP(res, req)
+	if res.Code != http.StatusBadRequest || !strings.Contains(res.Body.String(), "That share link is not valid.") {
+		t.Fatalf("expected invalid share slug page, got status=%d body=%q", res.Code, res.Body.String())
+	}
+}
+
 func TestListValidationHappensBeforeStore(t *testing.T) {
 	handler := newTestHandler()
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/notes?page_size=500", nil)

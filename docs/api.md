@@ -44,6 +44,14 @@ Public shared notes intentionally use a reduced response shape:
 
 Owner-scoped note reads, updates, and deletes intentionally translate cross-owner lookups into the same `not_found` envelope as a truly missing note. That keeps the API from leaking whether another user's note UUID exists.
 
+Browser clients can also open the shared note UI route:
+
+```text
+/shared/{slug}
+```
+
+That route is outside the `/api/v1` API namespace, does not require sign-in, and uses the same shared-note service path as `GET /notes/shared/{slug}`.
+
 ## List query parameters
 
 - `page`

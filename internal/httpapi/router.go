@@ -43,6 +43,7 @@ func NewHandler(deps Dependencies) http.Handler {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", api.handleHome)
+	mux.Handle("GET /shared/{slug}", throttle(http.HandlerFunc(api.handlePublicSharedNote)))
 	mux.HandleFunc("GET /api/v1/healthz", api.handleHealth)
 	mux.Handle("GET /api/v1/auth/login", throttle(http.HandlerFunc(api.handleLogin)))
 	mux.Handle("GET /api/v1/auth/callback", throttle(http.HandlerFunc(api.handleCallback)))

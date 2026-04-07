@@ -28,6 +28,8 @@ What is available today:
   - `PATCH /api/v1/notes/{id}`
   - `DELETE /api/v1/notes/{id}`
   - `GET /api/v1/notes/shared/{slug}`
+- Public shared-note UI:
+  - `GET /shared/{slug}`
 - Saved query endpoints:
   - `GET /api/v1/saved-queries`
   - `POST /api/v1/saved-queries`
@@ -84,6 +86,7 @@ Recent completion:
 - the OIDC setup docs and env example now assume an external provider and explain issuer discovery, PKCE, redirect URIs, and when a client secret is optional
 - the MCP slice now runs over stdio and reuses the existing note service for note CRUD, note-state updates, and owner-scoped tag discovery
 - the project now has a small browser-based UI at `/` that reuses the existing auth and notes services instead of introducing a separate frontend app
+- shared notes now have a public browser page at `/shared/{slug}` that renders safely without requiring sign-in
 - tag filtering now works consistently across REST, MCP, and the web UI, including multi-tag `any`/`all` matching and SQL-driven `tag_count` sorting
 - tag-oriented sorting now also includes `primary_tag`, which orders notes by the first stored tag without moving sort logic out of PostgreSQL
 - the project intentionally stops there for tag-derived sorts; when a tag-filtered result set needs a human-friendly order, the recommended pattern is still `sort=title`

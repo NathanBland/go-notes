@@ -6,6 +6,12 @@ The project uses an `Unreleased` section during feature work and promotes those 
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-07
+
+### Added
+
+- Public shared-note pages are now available at `/shared/{slug}` so intentionally shared notes can be read in a browser without signing in.
+
 ## [0.1.2] - 2026-04-06
 
 ### Changed

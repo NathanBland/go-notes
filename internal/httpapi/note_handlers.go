@@ -4,12 +4,16 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/nathanbland/go-notes/internal/notes"
 )
+
+var shareSlugPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{1,128}$`)
 
 // sharedNoteResponse is the intentionally public shape for shared note reads.
 // It omits internal identifiers so a shared link does not leak the note UUID or
@@ -237,7 +241,7 @@ func (a *API) handleDeleteNote(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) handleGetSharedNote(w http.ResponseWriter, r *http.Request) {
 	slug := r.PathValue("slug")
-	if slug == "" {
+	if !validShareSlug(slug) {
 		writeError(w, http.StatusBadRequest, "invalid_slug", "share slug is required", nil)
 		return
 	}
@@ -247,6 +251,11 @@ func (a *API) handleGetSharedNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeData(w, http.StatusOK, toSharedNoteResponse(note))
+}
+
+func validShareSlug(slug string) bool {
+	trimmed := strings.TrimSpace(slug)
+	return trimmed != "" && trimmed == slug && shareSlugPattern.MatchString(slug)
 }
 
 func (a *API) handleNotFound(w http.ResponseWriter, r *http.Request) {

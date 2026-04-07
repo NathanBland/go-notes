@@ -193,6 +193,28 @@ func TestRenderMarkdownAndFormattingHelpers(t *testing.T) {
 	}
 }
 
+func TestNoteDetailShowsPublicShareLink(t *testing.T) {
+	slug := "public-note"
+	note := notes.Note{
+		ID:        uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+		Content:   "hello",
+		Shared:    true,
+		ShareSlug: &slug,
+		UpdatedAt: time.Date(2026, time.April, 6, 10, 0, 0, 0, time.UTC),
+	}
+	res := httptest.NewRecorder()
+	api := &API{}
+
+	api.renderHTML(res, http.StatusOK, "note_detail", noteDetailViewModel{Note: note})
+
+	if res.Code != http.StatusOK {
+		t.Fatalf("expected note detail status 200, got %d", res.Code)
+	}
+	if !strings.Contains(res.Body.String(), `href="/shared/public-note"`) || !strings.Contains(res.Body.String(), "Public link") {
+		t.Fatalf("expected shared note detail to expose public share link, got %q", res.Body.String())
+	}
+}
+
 func TestMaybeUserAndSelectionHelpers(t *testing.T) {
 	userID := uuid.MustParse("11111111-1111-1111-1111-111111111111")
 	user := auth.User{ID: userID}

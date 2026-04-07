@@ -40,6 +40,10 @@ The UI is intentionally not a separate frontend application. The note behavior s
 - `GET /`
   - public landing page when unauthenticated, with a concise overview of the running service experience: private Markdown notes, tag filtering, saved searches, intentional sharing, OIDC login, and optional API/agent access
   - authenticated workspace when a valid session cookie is present
+- `GET /shared/{slug}`
+  - public shared-note page for intentionally shared notes
+  - does not require sign-in
+  - reuses the same shared-note service path as the JSON API
 - `POST /app/logout`
 - `POST /app/saved-queries`
   - save the current filter set as a named saved query
@@ -85,7 +89,30 @@ The workspace now includes a filter form:
 
 The note detail view also turns each rendered tag into a small filter link so the UI can demonstrate a lightweight "browse notes like this one" interaction.
 
+When a note is shared, the authenticated note detail view displays the public `/shared/{slug}` link. That link can be opened by someone who is not signed in, but only when the note is intentionally shared and still has an active share slug.
+
 This keeps the UI dynamic while preserving normal links and form actions as simple browser fallbacks.
+
+## Public shared notes
+
+Shared notes have a dedicated browser route:
+
+```text
+/shared/{slug}
+```
+
+That route renders a reduced public page:
+
+- no sign-in required
+- Markdown is rendered with the same safe Goldmark configuration used by the authenticated workspace
+- internal note IDs and owner IDs are not rendered
+- missing, unshared, or malformed links render public error pages rather than redirecting to login
+
+The JSON API route remains available at:
+
+```text
+/api/v1/notes/shared/{slug}
+```
 
 ## Saved queries
 

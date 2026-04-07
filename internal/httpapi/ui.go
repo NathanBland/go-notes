@@ -118,6 +118,26 @@ func (a *API) handleUILogout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
+func (a *API) handlePublicSharedNote(w http.ResponseWriter, r *http.Request) {
+	slug := r.PathValue("slug")
+	if !validShareSlug(slug) {
+		a.renderHTML(w, http.StatusBadRequest, "shared_note_error", map[string]string{
+			"Title":   "That share link is not valid.",
+			"Message": "Check the link and try again.",
+		})
+		return
+	}
+	note, err := a.notesService.GetByShareSlug(r.Context(), slug)
+	if err != nil {
+		a.renderHTML(w, http.StatusNotFound, "shared_note_error", map[string]string{
+			"Title":   "Shared note not found.",
+			"Message": "This note may be private now, or the link may no longer exist.",
+		})
+		return
+	}
+	a.renderHTML(w, http.StatusOK, "shared_note_page", note)
+}
+
 func (a *API) handleUIShowNote(w http.ResponseWriter, r *http.Request) {
 	user, ok := userFromContext(r.Context())
 	if !ok {
@@ -1318,6 +1338,14 @@ const uiTemplatesSource = `
       <span>•</span>
       <span>{{if .Note.Archived}}Archived{{else}}Active{{end}}</span>
     </div>
+    {{if .Note.Shared}}
+      {{with .Note.ShareSlug}}
+        <div class="mt-4 rounded-2xl border border-teal-500/20 bg-teal-500/10 px-4 py-3 text-sm text-teal-50">
+          Public link:
+          <a class="font-semibold underline underline-offset-4 transition hover:text-teal-100" href="/shared/{{.}}">/shared/{{.}}</a>
+        </div>
+      {{end}}
+    {{end}}
   </header>
   <div class="note-markdown max-w-none">{{renderMarkdown .Note.Content}}</div>
 </article>
@@ -1376,5 +1404,134 @@ const uiTemplatesSource = `
   <h2 class="font-serif text-3xl">Unable to load note</h2>
   <p class="mt-3 text-sm text-rose-200">{{.Message}}</p>
 </div>
+{{end}}
+
+{{define "shared_note_page"}}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{noteTitle .}} · go-notes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = { theme: { extend: { fontFamily: { sans: ['IBM Plex Sans', 'sans-serif'], serif: ['Newsreader', 'serif'] } } } }
+  </script>
+  <style>
+    .note-markdown > * + * { margin-top: 1rem; }
+    .note-markdown h1, .note-markdown h2, .note-markdown h3, .note-markdown h4 {
+      font-family: "Newsreader", serif;
+      color: rgb(250 250 249);
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-top: 2rem;
+      margin-bottom: 0.9rem;
+    }
+    .note-markdown h1 { font-size: 2.4rem; }
+    .note-markdown h2 { font-size: 2rem; }
+    .note-markdown h3 { font-size: 1.55rem; }
+    .note-markdown h4 { font-size: 1.2rem; }
+    .note-markdown p, .note-markdown li {
+      font-size: 1rem;
+      line-height: 1.9;
+      color: rgb(231 229 228);
+    }
+    .note-markdown a {
+      color: rgb(94 234 212);
+      text-decoration: underline;
+      text-underline-offset: 0.22em;
+    }
+    .note-markdown strong { color: rgb(250 250 249); font-weight: 700; }
+    .note-markdown em { color: rgb(253 230 138); }
+    .note-markdown ul, .note-markdown ol { padding-left: 1.4rem; }
+    .note-markdown ul { list-style: disc; }
+    .note-markdown ol { list-style: decimal; }
+    .note-markdown li + li { margin-top: 0.35rem; }
+    .note-markdown blockquote {
+      border-left: 4px solid rgb(45 212 191 / 0.55);
+      background: rgb(12 10 9 / 0.55);
+      color: rgb(214 211 209);
+      border-radius: 0 1rem 1rem 0;
+      padding: 1rem 1.25rem;
+      margin: 1.5rem 0;
+    }
+    .note-markdown code {
+      background: rgb(28 25 23);
+      color: rgb(253 230 138);
+      border: 1px solid rgb(68 64 60);
+      border-radius: 0.6rem;
+      padding: 0.15rem 0.4rem;
+      font-size: 0.92em;
+    }
+    .note-markdown pre {
+      background: rgb(12 10 9);
+      border: 1px solid rgb(68 64 60);
+      border-radius: 1rem;
+      padding: 1rem 1.1rem;
+      overflow-x: auto;
+    }
+    .note-markdown pre code {
+      background: transparent;
+      border: 0;
+      color: rgb(231 229 228);
+      padding: 0;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-stone-950 text-stone-100">
+  <main class="mx-auto max-w-4xl px-6 py-12">
+    <article class="rounded-[2rem] border border-teal-400/20 bg-stone-900/85 p-6 shadow-2xl shadow-teal-950/30 md:p-10">
+      <header class="border-b border-stone-800 pb-6">
+        <p class="text-xs uppercase tracking-[0.35em] text-teal-300">Shared note</p>
+        <h1 class="mt-3 font-serif text-5xl leading-tight text-stone-50">{{noteTitle .}}</h1>
+        <div class="mt-5 flex flex-wrap gap-3 text-sm text-stone-400">
+          <span>Updated {{formatTimestamp .UpdatedAt}}</span>
+          {{if .Tags}}
+            <span>•</span>
+            <span class="flex flex-wrap gap-2">
+              {{range .Tags}}
+                <span class="rounded-full border border-teal-500/30 bg-teal-500/10 px-2.5 py-1 text-xs text-teal-100">{{.}}</span>
+              {{end}}
+            </span>
+          {{end}}
+        </div>
+      </header>
+      <div class="note-markdown mt-8 max-w-none">{{renderMarkdown .Content}}</div>
+    </article>
+    <p class="mt-6 text-center text-sm text-stone-500">This note was intentionally shared by its owner.</p>
+  </main>
+</body>
+</html>
+{{end}}
+
+{{define "shared_note_error"}}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{.Title}} · go-notes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = { theme: { extend: { fontFamily: { sans: ['IBM Plex Sans', 'sans-serif'], serif: ['Newsreader', 'serif'] } } } }
+  </script>
+</head>
+<body class="min-h-screen bg-stone-950 text-stone-100">
+  <main class="mx-auto flex min-h-screen max-w-3xl flex-col justify-center px-6 py-16 text-center">
+    <section class="rounded-[2rem] border border-rose-400/25 bg-rose-950/30 p-8 shadow-2xl shadow-black/20">
+      <p class="text-xs uppercase tracking-[0.35em] text-rose-200">go-notes</p>
+      <h1 class="mt-3 font-serif text-5xl text-stone-50">{{.Title}}</h1>
+      <p class="mt-5 text-lg leading-8 text-rose-100">{{.Message}}</p>
+      <a href="/" class="mt-8 inline-flex rounded-full border border-stone-700 px-5 py-3 text-sm font-semibold text-stone-200 transition hover:border-stone-500 hover:text-stone-50">Go to sign in</a>
+    </section>
+  </main>
+</body>
+</html>
 {{end}}
 `
